@@ -6,6 +6,7 @@ import time
 import win32gui
 
 import PIL
+import math
 import pyscreenshot as ImageGrab
 from PIL import ImageOps, ImageChops
 from pynput.keyboard import Listener, Key, Controller as cont
@@ -82,43 +83,41 @@ job_thread.start()
 
 
 def resetMouse():
-    mouse.position = (-100000, -100000)
+    mouse.position = (-1300, -1300)
     print('Mouse reset')
     global currentMov
     currentMov = [0, 0]
 
 
-def on_press(key):
-    key_press = key
-    try:
-        if key.name == 'shift':
-            global shiftOn
-            if not shiftOn:
-                print("shift on!")
-                shiftOn = True
-        if key.name == 'ctrl_l':
-            global ctrlOn
-            ctrlOn = True
-    except:
-        1
-
 
 def moveMouse(x, y):
     global currentMov
     currentMov[0] = currentMov[0] + x
+    currentMov[0] = 0 if currentMov[0] < 0 else currentMov[0]
     currentMov[1] = currentMov[1] + y
+    currentMov[1] = 0 if currentMov[1] < 0 else currentMov[1]
+    xPos = 1 if x > 0 else -1
+    yPos = 1 if y > 0 else -1
+    x = math.fabs(x)
+    y = math.fabs(y)
     while x > 0 or y > 0:
-        if x > 230:
-            tempX = 230
-        else:
-            tempX = x
-        if y > 230:
-            tempY = 230
-        else:
-            tempY = x
+        tempX = 0
+        tempY = 0
+        if x > 0:
+            if x > 230:
+                tempX = 230
+            else:
+                tempX = x
+        if y > 0:
+            if y > 230:
+                tempY = 230
+            else:
+                tempY = y
         y = y - 230
         x = x - 230
-        mouse.position = (windowXmiddle + tempX, windowYMiddle + tempY)
+        mouse.position = (windowXmiddle + (xPos * tempX), windowYMiddle + (yPos * tempY))
+        if x > 0 or y > 0:
+            time.sleep(0.018)
 
 
 def recordWalk(outputType: OutputType, current: [] = None):
@@ -141,20 +140,35 @@ def recordWalk(outputType: OutputType, current: [] = None):
 listen = True
 
 
+
 def replayStep(step: Step):
+    if step.readyImage is not None:
+        #if difference between current image and reference image is all black
+        while True:
+            im = ImageGrab.grab(bbox, childprocess=False)
+            dif = ImageChops.difference(im, step.readyImage)
+            print(dif.getbbox())
+            if dif.getbbox() is None or dif.getbbox()[3] < 20:
+                break
+
     if step.output == OutputType.UP:
+        time.sleep(0.01)
         keyboard.press(Key.up)
         keyboard.release(Key.up)
     if step.output == OutputType.LEFT:
+        time.sleep(0.01)
         keyboard.press(Key.left)
         keyboard.release(Key.left)
     if step.output == OutputType.DOWN:
+        time.sleep(0.01)
         keyboard.press(Key.down)
         keyboard.release(Key.down)
     if step.output == OutputType.RIGHT:
+        time.sleep(0.01)
         keyboard.press(Key.right)
         keyboard.release(Key.right)
     if step.output == OutputType.CLICK:
+        time.sleep(0.1)
         moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         time.sleep(0.1)
         mouse.press(Button.left)
@@ -184,7 +198,6 @@ def on_release(key):
         if key.name == 'shift':
             if shiftOn:
                 shiftOn = False
-                print("shift off!")
         if key.name == 'ctrl_l':
             ctrlOn = False
         if key.name == 'tab':
@@ -192,7 +205,7 @@ def on_release(key):
         if key.name == 'space':
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.05)
+            time.sleep(0.005)
             mouse.release(Button.left)
             recordWalk(OutputType.CLICK, [currentMov[0], currentMov[1]])
     if hasattr(key, "char"):
@@ -219,6 +232,9 @@ def on_release(key):
             keyboard.press(Key.down)
             keyboard.release(Key.down)
             recordWalk(OutputType.DOWN)
+        if key.char == ';':
+            for x in stepList:
+                replayStep(x)
         if key.char == 'l':
             keyboard.press(Key.right)
             keyboard.release(Key.right)
@@ -228,12 +244,7 @@ def on_release(key):
             listen = False
             currentStageName = input('which stage?')
             stage = parseSteps(currentStageName + ".dat")
-            print("starting in 5")
-            time.sleep(5)
-            print("starting")
-            for x in stage.steps:
-                replayStep(x)
-                time.sleep(0.5)
+            stepList = stage.steps
             listen = True
         if key.char == 'o':
             # start recording
@@ -247,6 +258,18 @@ def on_release(key):
             stage = formatStage(Stage(currentStageName, stepList))
             print(stage)
             f.write(stage)
+
+def on_press(key):
+    try:
+        if key.name == 'shift':
+            global shiftOn
+            if not shiftOn:
+                shiftOn = True
+        if key.name == 'ctrl_l':
+            global ctrlOn
+            ctrlOn = True
+    except:
+        1
 
 
 with Listener(on_press=on_press, on_release=on_release) as listener:

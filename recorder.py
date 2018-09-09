@@ -8,7 +8,7 @@ import win32gui
 import PIL
 import math
 import pyscreenshot as ImageGrab
-from PIL import ImageOps, ImageChops
+from PIL import ImageOps, ImageChops, Image
 from pynput.keyboard import Listener, Key, Controller as cont
 from pynput.mouse import Button, Controller
 
@@ -28,6 +28,7 @@ refImageName = None
 
 currentStageName = ''
 stepList = []
+stage = None
 currentStep = 0
 
 window = windowOps.find_window("DOSBox")
@@ -142,13 +143,22 @@ listen = True
 
 
 def replayStep(step: Step):
+    global currentStep
+    currentStep  = currentStep + 1
     if step.readyImage is not None:
+        count = 0
         #if difference between current image and reference image is all black
+        ignoreMask = step.readyImage.point(lambda x: 255 if x == 255 else 0)
+        transparencyMask = ignoreMask.convert("1", dither = 0)
+        ignoreMask.putalpha(transparencyMask)
         while True:
             im = ImageGrab.grab(bbox, childprocess=False)
+            im = im.convert("RGBA")
+            im = Image.alpha_composite(im, ignoreMask)
             dif = ImageChops.difference(im, step.readyImage)
-            print(dif.getbbox())
+            print("Waiting on:" + step.imageName)
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
+                print("done waiting")
                 break
 
     if step.output == OutputType.UP:
@@ -174,6 +184,13 @@ def replayStep(step: Step):
         mouse.press(Button.left)
         time.sleep(0.02)
         mouse.release(Button.left)
+    if step.output == OutputType.LONG_CLICK:
+        time.sleep(0.1)
+        moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
+        time.sleep(0.1)
+        mouse.press(Button.left)
+        time.sleep(0.05)
+        mouse.release(Button.left)
     if step.output == OutputType.RESET:
         resetMouse()
         time.sleep(0.02)
@@ -192,6 +209,7 @@ def on_release(key):
     global stepList
     global refImageName
     global listen
+    global stage
     if not listen:
         return
     if hasattr(key, "name"):
@@ -235,6 +253,10 @@ def on_release(key):
         if key.char == ';':
             for x in stepList:
                 replayStep(x)
+            print("done: " + currentStageName)
+            stage = parseSteps(stage.nextStageName + ".dat")
+            print("ready: " + stage.name)
+            stepList = stage.steps
         if key.char == 'l':
             keyboard.press(Key.right)
             keyboard.release(Key.right)

@@ -8,6 +8,7 @@ class OutputType(Enum):
     RIGHT = "RIGHT"
     W = "W"
     CLICK = "CLK"
+    LONG_CLICK = "LONG_CLICK"
     RESET="RESET"
 
 
@@ -20,9 +21,10 @@ class Step:
         self.clickPos = clickPos
 
 class Stage:
-    def __init__(self, name: str, steps: []):
+    def __init__(self, name: str, steps: [], nextStage:str=''):
         self.name = name
         self.steps = steps
+        self.nextStageName = nextStage
 
 
 def parse(number, line: str):
@@ -30,10 +32,10 @@ def parse(number, line: str):
     if len(split) == 1:
         return Step(number, OutputType[split[0]],None, None)
     if len(split) == 2 or len(split[2]) == 0:
-        return Step(number, OutputType[split[0]],split[1], Image.open(split[1]))
+        return Step(number, OutputType[split[0]],split[1], Image.open(split[1]).convert("RGBA"))
     clickPos = [int(split[2].split(",")[0]), int(split[2].split(",")[1])]
     if len(split[1]) > 0:
-        return Step(number, OutputType[split[0]],split[1], Image.open(split[1]), clickPos=clickPos)
+        return Step(number, OutputType[split[0]],split[1], Image.open(split[1]).convert("RGBA"), clickPos=clickPos)
     else:
         return  Step(number, OutputType[split[0]],split[1], None, clickPos=clickPos)
 
@@ -41,7 +43,7 @@ def parseSteps(fileName):
     with open(fileName) as f:
         content = f.readlines()
     content = [x.strip() for x in content]
-    return Stage(fileName, [parse(ind, x) for ind, x in enumerate(content)])
+    return Stage(fileName, [parse(ind, x) for ind, x in enumerate(content) if not x.startswith("#") and not x.startswith("?")], content[len(content)-1].replace("?", ""))
 
 
 def formatStage(stage:Stage):

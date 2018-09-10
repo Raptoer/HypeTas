@@ -15,6 +15,9 @@ from pynput.mouse import Button, Controller
 import windowOps
 from step import parseSteps, formatStage, Step, OutputType, Stage
 
+#add a away to set cursor to currentPos
+#problems with currentStageName during appending
+
 keyboard = cont()
 
 shiftOn = False
@@ -121,6 +124,13 @@ def moveMouse(x, y):
             time.sleep(0.018)
 
 
+def setStep(step):
+    if currentStep > len(stepList):
+        stepList.append(step)
+    else:
+        stepList[currentStep] = step
+
+
 def recordWalk(outputType: OutputType, current: [] = None):
     global currentStep
     global refImage
@@ -132,10 +142,10 @@ def recordWalk(outputType: OutputType, current: [] = None):
     refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + ".bmp"
     if (refImage):
         refImage.save(refImageName)
-        stepList.append(Step(currentStep, outputType, refImageName, refImage, current))
+        setStep(Step(currentStep, outputType, refImageName, refImage, current))
         refImage = False
     else:
-        stepList.append(Step(currentStep, outputType, None, None, current))
+        setStep(Step(currentStep, outputType, None, None, current))
 
 
 listen = True
@@ -261,6 +271,8 @@ def on_release(key):
                 stepList = []
             else:
                 stage = parseSteps(stage.nextStageName + ".dat")
+                currentStep = 0
+                currentStageName = stage.name
                 print("ready: " + stage.name)
                 stepList = stage.steps
         if key.char == '\'':

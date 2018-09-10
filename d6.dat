@@ -1,9 +1,9 @@
-LEFT;.\react2\64.bmp;
+LEFT;.\d6\64.bmp;
 UP
-CLICK;.\react2\66.bmp;350,480
+CLICK;.\d6\66.bmp;350,480
 CLICK;;350,480
-UP;.\react2\68.bmp;
-RIGHT;.\react2\69.bmp;
+UP;.\d6\68.bmp;
+RIGHT;.\d6\69.bmp;
 UP
 UP
 LEFT

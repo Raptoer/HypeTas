@@ -1,10 +1,9 @@
-RESET;.\d6\64.bmp;
-LEFT
+LEFT;.\react2\64.bmp;
 UP
-CLICK;;300,350
-CLICK;;300,350
-UP
-RIGHT
+CLICK;.\react2\66.bmp;350,480
+CLICK;;350,480
+UP;.\react2\68.bmp;
+RIGHT;.\react2\69.bmp;
 UP
 UP
 LEFT

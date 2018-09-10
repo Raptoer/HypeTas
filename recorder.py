@@ -255,9 +255,14 @@ def on_release(key):
             for x in stepList:
                 replayStep(x)
             print("done: " + currentStageName)
-            stage = parseSteps(stage.nextStageName + ".dat")
-            print("ready: " + stage.name)
-            stepList = stage.steps
+            if stage.nextStageName == 'NONE':
+                print("ready: to read")
+                stage = None
+                stepList = []
+            else:
+                stage = parseSteps(stage.nextStageName + ".dat")
+                print("ready: " + stage.name)
+                stepList = stage.steps
         if key.char == '\'':
             replayStep(stepList[currentStep])
             print("done: " + str(currentStep))
@@ -272,14 +277,9 @@ def on_release(key):
             stage = parseSteps(currentStageName + ".dat")
             stepList = stage.steps
             listen = True
-        if key.char == 'o':
-            # start recording
-            listen = False
-            currentStageName = input('stage name:')
-            listen = True
-            stepList = [Step(0, OutputType.RESET, None, None)]
         if key.char == 'p':
             # stop recording
+            currentStageName = input('stage name:')
             f = open(currentStageName + ".dat", "w")
             stage = formatStage(Stage(currentStageName, stepList))
             print(stage)

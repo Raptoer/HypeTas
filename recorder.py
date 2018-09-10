@@ -199,6 +199,7 @@ def replayStep(step: Step):
         resetMouse()
         time.sleep(0.02)
         resetMouse()
+    return currentStep
 
 
 def on_release(key):
@@ -257,6 +258,9 @@ def on_release(key):
             stage = parseSteps(stage.nextStageName + ".dat")
             print("ready: " + stage.name)
             stepList = stage.steps
+        if key.char == '\'':
+            replayStep(stepList[currentStep])
+            print("done: " + str(currentStep))
         if key.char == 'l':
             keyboard.press(Key.right)
             keyboard.release(Key.right)

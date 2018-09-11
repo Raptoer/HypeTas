@@ -128,7 +128,7 @@ def setStep(step):
     if currentStep > len(stepList):
         stepList.append(step)
     else:
-        stepList[currentStep] = step
+        stepList[currentStep-1] = step
 
 
 def recordWalk(outputType: OutputType, current: [] = None):
@@ -154,6 +154,7 @@ listen = True
 
 def replayStep(step: Step):
     global currentStep
+    global showImage
     currentStep  = currentStep + 1
     if step.readyImage is not None:
         count = 0
@@ -270,7 +271,7 @@ def on_release(key):
                 stage = None
                 stepList = []
             else:
-                stage = parseSteps(stage.nextStageName + ".dat")
+                stage = parseSteps(stage.nextStageName)
                 currentStep = 0
                 currentStageName = stage.name
                 print("ready: " + stage.name)
@@ -286,7 +287,7 @@ def on_release(key):
             # start playback
             listen = False
             currentStageName = input('which stage?')
-            stage = parseSteps(currentStageName + ".dat")
+            stage = parseSteps(currentStageName)
             stepList = stage.steps
             listen = True
         if key.char == 'p':

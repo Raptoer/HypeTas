@@ -128,6 +128,7 @@ def setStep(step):
     if currentStep > len(stepList):
         stepList.append(step)
     else:
+        print("adding: " + step.output.name + " at " + str(currentStep-1) + " (0indexed)")
         stepList[currentStep-1] = step
 
 

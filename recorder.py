@@ -1,7 +1,5 @@
-import multiprocessing
 import os
 import sys
-import threading
 import time
 import win32gui
 
@@ -17,9 +15,6 @@ from pynput.mouse import Button, Controller
 
 import windowOps
 from step import parseSteps, formatStage, Step, OutputType, Stage
-
-#add a away to set cursor to currentPos
-#problems with currentStageName during appending
 
 keyboard = cont()
 
@@ -44,50 +39,32 @@ windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
 
 
-def imageLoop():
-    if __name__ == "__main__" and shiftOn:
-        # fullscreen
-        if window:
-            global firstImage
-            global accumulatorImage
-            global bbox
-            multiprocessing.freeze_support()
-            try:
-                im = ImageGrab.grab(bbox, childprocess=False)
-                if not firstImage:
-                    firstImage = im
+
+#loops for 20 runs and puts together the refImage
+def loopAndGrabImage():
+    global bbox
+    sct = mss()
+    firstImage = None
+    accumulatorImage = None
+    for i in range(20):
+        try:
+            sct_img = sct.grab(bbox)
+            im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            if not firstImage:
+                firstImage = im
+            else:
+                im = PIL.ImageChops.difference(im, firstImage)
+                if not accumulatorImage:
+                    accumulatorImage = im
                 else:
-                    im = PIL.ImageChops.difference(im, firstImage)
-                    if not accumulatorImage:
-                        accumulatorImage = im
-                    else:
-                        accumulatorImage = PIL.ImageChops.add(im, accumulatorImage)
-            except:
-                print(sys.exc_info())
-    if not shiftOn and accumulatorImage:
-        screen = PIL.ImageOps.invert(accumulatorImage.point(lambda x: 0 if x == 0 else 255))
-        im = ImageGrab.grab(bbox=bbox, childprocess=False)
-        im = PIL.ImageOps.invert(PIL.ImageChops.subtract(screen, im))
-        global refImage
-        refImage = im
-        accumulatorImage = False
-        firstImage = False
-    return True
+                    accumulatorImage = PIL.ImageChops.add(im, accumulatorImage)
+        except:
+            print(sys.exc_info())
 
-
-times = []
-timeCount = 0
-
-
-def runTimer():
-    while 1:
-        imageLoop()
-        time.sleep(0.001)
-
-
-job_thread = threading.Thread(target=runTimer)
-job_thread.start()
-
+    screen = PIL.ImageOps.invert(accumulatorImage.point(lambda x: 0 if x == 0 else 255))
+    im = ImageGrab.grab(bbox=bbox, childprocess=False)
+    im = PIL.ImageOps.invert(PIL.ImageChops.subtract(screen, im))
+    return im
 
 def resetMouse():
     mouse.position = (-1300, -1300)
@@ -95,14 +72,20 @@ def resetMouse():
     global currentMov
     currentMov = [0, 0]
 
+clickImage = False
 
 
-def moveMouse(x, y):
+def moveMouse(x, y, recordImage:bool = False):
+    if recordImage:
+        global clickImage
+        if not clickImage:
+            clickImage = loopAndGrabImage()
     global currentMov
     currentMov[0] = currentMov[0] + x
     currentMov[0] = 0 if currentMov[0] < 0 else currentMov[0]
     currentMov[1] = currentMov[1] + y
     currentMov[1] = 0 if currentMov[1] < 0 else currentMov[1]
+    print("moving mouse by:" + str(x) + "," + str(y) + " to " + str(currentMov[0]) + ", " + str(currentMov[1]))
     xPos = 1 if x > 0 else -1
     yPos = 1 if y > 0 else -1
     x = math.fabs(x)
@@ -135,9 +118,8 @@ def setStep(step):
         stepList[currentStep-1] = step
 
 
-def recordWalk(outputType: OutputType, current: [] = None):
+def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
     global currentStep
-    global refImage
     currentStep = currentStep + 1
     try:
         os.makedirs(".\\" + currentStageName)
@@ -147,18 +129,14 @@ def recordWalk(outputType: OutputType, current: [] = None):
     if (refImage):
         refImage.save(refImageName)
         setStep(Step(currentStep, outputType, refImageName, refImage, current))
-        refImage = False
     else:
         setStep(Step(currentStep, outputType, None, None, current))
 
 
 listen = True
 
-
-
 def replayStep(step: Step):
     global currentStep
-    global showImage
     currentStep  = currentStep + 1
     sct = mss()
     if step.readyImage is not None:
@@ -173,14 +151,7 @@ def replayStep(step: Step):
         delaysAlpha = []
         delaysDifference = []
         while True:
-            if step.output == OutputType.CLICK_UNTIL:
-                mouse.press(Button.left)
-                time.sleep(0.02)
-                mouse.release(Button.left)
-                print("cli")
             timeStart = time.perf_counter()
-
-            # The simplest use, save a screen shot of the 1st monitor
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             delaysGrab.append(time.perf_counter() - timeStart)
@@ -193,6 +164,7 @@ def replayStep(step: Step):
             timeStart = time.perf_counter()
             dif = ImageChops.difference(im, step.readyImage)
             delaysDifference.append(time.perf_counter() - timeStart)
+            count = count + 1
             if count % 5 == 0:
                 print("Waiting on:" + step.imageName)
             count = count + 1
@@ -203,32 +175,27 @@ def replayStep(step: Step):
                 print("ALPHA:" + str(sum(delaysAlpha) / len(delaysAlpha)))
                 print("DIFFERENCE:" + str(sum(delaysDifference) / len(delaysDifference)))
                 break
-
+        else:
+            time.sleep(0.01)
     if step.output == OutputType.UP:
-        time.sleep(0.01)
         keyboard.press(Key.up)
         keyboard.release(Key.up)
     if step.output == OutputType.LEFT:
-        time.sleep(0.01)
         keyboard.press(Key.left)
         keyboard.release(Key.left)
     if step.output == OutputType.DOWN:
-        time.sleep(0.01)
         keyboard.press(Key.down)
         keyboard.release(Key.down)
     if step.output == OutputType.RIGHT:
-        time.sleep(0.01)
         keyboard.press(Key.right)
         keyboard.release(Key.right)
-    if step.output == OutputType.CLICK or step.output == OutputType.CLICK_UNTIL:
-        time.sleep(0.1)
+    if step.output == OutputType.CLICK:
         moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         time.sleep(0.1)
         mouse.press(Button.left)
         time.sleep(0.02)
         mouse.release(Button.left)
     if step.output == OutputType.LONG_CLICK:
-        time.sleep(0.1)
         moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         time.sleep(0.1)
         mouse.press(Button.left)
@@ -254,6 +221,7 @@ def on_release(key):
     global refImageName
     global listen
     global stage
+    global clickImage
     if not listen:
         return
     if hasattr(key, "name"):
@@ -265,35 +233,47 @@ def on_release(key):
         if key.name == 'tab':
             resetMouse()
         if key.name == 'space':
+            if not clickImage:
+               clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
             time.sleep(0.005)
             mouse.release(Button.left)
-            recordWalk(OutputType.CLICK, [currentMov[0], currentMov[1]])
+            clickImageTemp = clickImage
+            clickImage = False
+            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
     if hasattr(key, "char"):
         amt = 50
         if ctrlOn:
             amt = 5
         if key.char == 'f':
-            moveMouse(0, amt)
+            moveMouse(0, amt, True)
         if key.char == 'g':
-            moveMouse(amt, 0)
+            moveMouse(amt, 0, True)
         if key.char == 'r':
-            moveMouse(0, -amt)
+            moveMouse(0, -amt, True)
         if key.char == 'd':
-            moveMouse(-amt, 0)
+            moveMouse(-amt, 0, True)
         if key.char == 'i':
+            preImage = loopAndGrabImage()
             keyboard.press(Key.up)
             keyboard.release(Key.up)
-            recordWalk(OutputType.UP)
+            recordWalk(OutputType.UP, preImage)
         if key.char == 'j':
+            preImage = loopAndGrabImage()
             keyboard.press(Key.left)
             keyboard.release(Key.left)
-            recordWalk(OutputType.LEFT)
+            recordWalk(OutputType.LEFT, preImage)
         if key.char == 'k':
+            preImage = loopAndGrabImage()
             keyboard.press(Key.down)
             keyboard.release(Key.down)
-            recordWalk(OutputType.DOWN)
+            recordWalk(OutputType.DOWN, preImage)
+        if key.char == 'l':
+            preImage = loopAndGrabImage()
+            keyboard.press(Key.right)
+            keyboard.release(Key.right)
+            recordWalk(OutputType.RIGHT, preImage)
         if key.char == ';':
             for x in stepList:
                 replayStep(x)
@@ -311,10 +291,6 @@ def on_release(key):
         if key.char == '\'':
             replayStep(stepList[currentStep])
             print("done: " + str(currentStep))
-        if key.char == 'l':
-            keyboard.press(Key.right)
-            keyboard.release(Key.right)
-            recordWalk(OutputType.RIGHT)
         if key.char == '[':
             # start playback
             listen = False

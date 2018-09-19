@@ -9,6 +9,7 @@ class OutputType(Enum):
     W = "W"
     CLICK = "CLK"
     LONG_CLICK = "LONG_CLICK"
+    CLICK_UNTIL = "CLICK_UNTIL"
     RESET="RESET"
 
 

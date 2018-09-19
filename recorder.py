@@ -5,6 +5,9 @@ import threading
 import time
 import win32gui
 
+from mss import mss
+
+
 import PIL
 import math
 import pyscreenshot as ImageGrab
@@ -157,20 +160,48 @@ def replayStep(step: Step):
     global currentStep
     global showImage
     currentStep  = currentStep + 1
+    sct = mss()
     if step.readyImage is not None:
         count = 0
         #if difference between current image and reference image is all black
         ignoreMask = step.readyImage.point(lambda x: 255 if x == 255 else 0)
         transparencyMask = ignoreMask.convert("1", dither = 0)
         ignoreMask.putalpha(transparencyMask)
+        count = 0
+        delaysGrab = []
+        delaysConvert = []
+        delaysAlpha = []
+        delaysDifference = []
         while True:
-            im = ImageGrab.grab(bbox, childprocess=False)
+            if step.output == OutputType.CLICK_UNTIL:
+                mouse.press(Button.left)
+                time.sleep(0.02)
+                mouse.release(Button.left)
+                print("cli")
+            timeStart = time.perf_counter()
+
+            # The simplest use, save a screen shot of the 1st monitor
+            sct_img = sct.grab(bbox)
+            im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            delaysGrab.append(time.perf_counter() - timeStart)
+            timeStart = time.perf_counter()
             im = im.convert("RGBA")
+            delaysConvert.append(time.perf_counter() - timeStart)
+            timeStart = time.perf_counter()
             im = Image.alpha_composite(im, ignoreMask)
+            delaysAlpha.append(time.perf_counter() - timeStart)
+            timeStart = time.perf_counter()
             dif = ImageChops.difference(im, step.readyImage)
-            print("Waiting on:" + step.imageName)
+            delaysDifference.append(time.perf_counter() - timeStart)
+            if count % 5 == 0:
+                print("Waiting on:" + step.imageName)
+            count = count + 1
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 print("done waiting")
+                print("GRAB:" + str(sum(delaysGrab) / len(delaysGrab)))
+                print("CONVERT:" + str(sum(delaysConvert) / len(delaysConvert)))
+                print("ALPHA:" + str(sum(delaysAlpha) / len(delaysAlpha)))
+                print("DIFFERENCE:" + str(sum(delaysDifference) / len(delaysDifference)))
                 break
 
     if step.output == OutputType.UP:
@@ -189,7 +220,7 @@ def replayStep(step: Step):
         time.sleep(0.01)
         keyboard.press(Key.right)
         keyboard.release(Key.right)
-    if step.output == OutputType.CLICK:
+    if step.output == OutputType.CLICK or step.output == OutputType.CLICK_UNTIL:
         time.sleep(0.1)
         moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         time.sleep(0.1)

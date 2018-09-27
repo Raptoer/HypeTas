@@ -44,7 +44,8 @@ def parseSteps(fileName):
     with open(fileName+".dat") as f:
         content = f.readlines()
     content = [x.strip() for x in content]
-    return Stage(fileName, [parse(ind, x) for ind, x in enumerate(content) if not x.startswith("#") and not x.startswith("?")], content[len(content)-1].replace("?", ""))
+    nextName = content[len(content) - 1].replace("?", "") if content[len(content) - 1].startswith("?") else None
+    return Stage(fileName, [parse(ind, x) for ind, x in enumerate(content) if not x.startswith("#") and not x.startswith("?")], nextName)
 
 
 def formatStage(stage:Stage):

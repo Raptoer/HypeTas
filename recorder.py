@@ -1,4 +1,6 @@
 import os
+import random
+import shutil
 import sys
 import time
 import win32gui
@@ -10,7 +12,7 @@ import PIL
 import math
 import pyscreenshot as ImageGrab
 from PIL import ImageOps, ImageChops, Image
-from pynput.keyboard import Listener, Key, Controller as cont
+from pynput.keyboard import Listener, Key, Controller as cont, KeyCode
 from pynput.mouse import Button, Controller
 
 import windowOps
@@ -37,6 +39,7 @@ hwndChild = win32gui.GetWindowRect(window)
 bbox = (hwndChild[0] + 4, hwndChild[1] + 4, hwndChild[2] - 4, hwndChild[3] - 4)
 windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
+append = False
 
 
 
@@ -69,6 +72,8 @@ def loopAndGrabImage():
 def resetMouse():
     mouse.position = (-1300, -1300)
     print('Mouse reset')
+    keyboard.press(KeyCode.from_char('N'))
+    keyboard.release(KeyCode.from_char('N'))
     global currentMov
     currentMov = [0, 0]
 
@@ -80,6 +85,8 @@ def moveMouse(x, y, recordImage:bool = False):
         global clickImage
         if not clickImage:
             clickImage = loopAndGrabImage()
+        else:
+            time.sleep(0.1)
     global currentMov
     currentMov[0] = currentMov[0] + x
     currentMov[0] = 0 if currentMov[0] < 0 else currentMov[0]
@@ -90,6 +97,8 @@ def moveMouse(x, y, recordImage:bool = False):
     yPos = 1 if y > 0 else -1
     x = math.fabs(x)
     y = math.fabs(y)
+    if x == 0 and y == 0:
+        return False
     while x > 0 or y > 0:
         tempX = 0
         tempY = 0
@@ -108,6 +117,7 @@ def moveMouse(x, y, recordImage:bool = False):
         mouse.position = (windowXmiddle + (xPos * tempX), windowYMiddle + (yPos * tempY))
         if x > 0 or y > 0:
             time.sleep(0.018)
+    return True
 
 
 def setStep(step):
@@ -125,7 +135,7 @@ def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
         os.makedirs(".\\" + currentStageName)
     except:
         1
-    refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + ".bmp"
+    refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + "_" + '%05x' % random.randrange(16**5) +  ".bmp"
     if (refImage):
         refImage.save(refImageName)
         setStep(Step(currentStep, outputType, refImageName, refImage, current))
@@ -133,12 +143,12 @@ def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
         setStep(Step(currentStep, outputType, None, None, current))
 
 
-listen = True
+sct = mss()
 
 def replayStep(step: Step):
     global currentStep
     currentStep  = currentStep + 1
-    sct = mss()
+    print("playing:" + str(currentStep))
     if step.readyImage is not None:
         count = 0
         #if difference between current image and reference image is all black
@@ -169,11 +179,6 @@ def replayStep(step: Step):
                 print("Waiting on:" + step.imageName)
             count = count + 1
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
-                print("done waiting")
-                print("GRAB:" + str(sum(delaysGrab) / len(delaysGrab)))
-                print("CONVERT:" + str(sum(delaysConvert) / len(delaysConvert)))
-                print("ALPHA:" + str(sum(delaysAlpha) / len(delaysAlpha)))
-                print("DIFFERENCE:" + str(sum(delaysDifference) / len(delaysDifference)))
                 break
         else:
             time.sleep(0.01)
@@ -190,16 +195,18 @@ def replayStep(step: Step):
         keyboard.press(Key.right)
         keyboard.release(Key.right)
     if step.output == OutputType.CLICK:
-        moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-        time.sleep(0.1)
+        moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
+        if moved:
+            time.sleep(0.07)
         mouse.press(Button.left)
         time.sleep(0.02)
         mouse.release(Button.left)
     if step.output == OutputType.LONG_CLICK:
-        moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-        time.sleep(0.1)
+        moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
+        if moved:
+            time.sleep(0.07)
         mouse.press(Button.left)
-        time.sleep(0.05)
+        time.sleep(0.1)
         mouse.release(Button.left)
     if step.output == OutputType.RESET:
         resetMouse()
@@ -219,11 +226,9 @@ def on_release(key):
     global shiftOn
     global stepList
     global refImageName
-    global listen
     global stage
     global clickImage
-    if not listen:
-        return
+    global append
     if hasattr(key, "name"):
         if key.name == 'shift':
             if shiftOn:
@@ -232,6 +237,7 @@ def on_release(key):
             ctrlOn = False
         if key.name == 'tab':
             resetMouse()
+            recordWalk(OutputType.RESET, None)
         if key.name == 'space':
             if not clickImage:
                clickImage = loopAndGrabImage()
@@ -278,10 +284,13 @@ def on_release(key):
             for x in stepList:
                 replayStep(x)
             print("done: " + currentStageName)
-            if stage.nextStageName == 'NONE':
-                print("ready: to read")
-                stage = None
-                stepList = []
+            if stage.nextStageName is None:
+                print("ready to read")
+                if not append:
+                    stage = None
+                    stepList = []
+                    currentStep = 0
+                    currentStageName = ""
             else:
                 stage = parseSteps(stage.nextStageName)
                 currentStep = 0
@@ -293,18 +302,33 @@ def on_release(key):
             print("done: " + str(currentStep))
         if key.char == '[':
             # start playback
-            listen = False
             currentStageName = input('which stage?')
             stage = parseSteps(currentStageName)
             stepList = stage.steps
-            listen = True
+        if key.char == ']':
+
+            append = not append
+            if append:
+                print("Mode: append")
+            else:
+                print("Mode: new")
         if key.char == 'p':
             # stop recording
             currentStageName = input('stage name:')
             f = open(currentStageName + ".dat", "w")
+            for step in stepList:
+                if step.imageName is not None:
+                    step.imageName = step.imageName.replace("\\\\", "\\" + currentStageName + "\\")
             stage = formatStage(Stage(currentStageName, stepList))
             print(stage)
             f.write(stage)
+            moveImages(currentStageName)
+
+def moveImages(currentStageName):
+    os.mkdir(".\\" + currentStageName)
+    for name in os.listdir("."):
+        if name.endswith(".bmp"):
+            shutil.move(name, currentStageName + "\\" + name)
 
 def on_press(key):
     try:

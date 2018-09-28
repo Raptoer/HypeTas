@@ -32,6 +32,7 @@ refImageName = None
 currentStageName = ''
 stepList = []
 stage = None
+delay = False
 currentStep = 0
 
 window = windowOps.find_window("DOSBox")
@@ -147,6 +148,7 @@ sct = mss()
 
 def replayStep(step: Step):
     global currentStep
+    global delay
     currentStep  = currentStep + 1
     print("playing:" + str(currentStep))
     if step.readyImage is not None:
@@ -198,8 +200,13 @@ def replayStep(step: Step):
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         if moved:
             time.sleep(0.07)
+        if delay:
+            print("extra sleep")
+            time.sleep(0.1)
         mouse.press(Button.left)
         time.sleep(0.02)
+        if delay:
+            time.sleep(0.03)
         mouse.release(Button.left)
     if step.output == OutputType.LONG_CLICK:
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
@@ -216,8 +223,11 @@ def replayStep(step: Step):
         resetMouse()
         time.sleep(0.02)
         resetMouse()
+    if step.output == OutputType.DELAY:
+        delay = not delay
     return currentStep
 
+override = False
 
 def on_release(key):
     global ctrlOn
@@ -229,6 +239,8 @@ def on_release(key):
     global stage
     global clickImage
     global append
+    global delay
+    global override
     if hasattr(key, "name"):
         if key.name == 'shift':
             if shiftOn:
@@ -284,6 +296,7 @@ def on_release(key):
             for x in stepList:
                 replayStep(x)
             print("done: " + currentStageName)
+            delay = False
             if stage.nextStageName is None:
                 print("ready to read")
                 if not append:
@@ -302,9 +315,13 @@ def on_release(key):
             print("done: " + str(currentStep))
         if key.char == '[':
             # start playback
-            currentStageName = input('which stage?')
-            stage = parseSteps(currentStageName)
-            stepList = stage.steps
+            if currentStageName != '' and not override:
+                override = True
+                print("warning, already loaded, did you mean to press record instead? Pressing again will override")
+            else:
+                currentStageName = input('which stage?')
+                stage = parseSteps(currentStageName)
+                stepList = stage.steps
         if key.char == ']':
 
             append = not append

@@ -11,6 +11,7 @@ class OutputType(Enum):
     LONG_CLICK = "LONG_CLICK"
     CLICK_UNTIL = "CLICK_UNTIL"
     RESET="RESET"
+    DELAY="DELAY"
 
 
 class Step:

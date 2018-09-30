@@ -177,9 +177,10 @@ def replayStep(step: Step):
             dif = ImageChops.difference(im, step.readyImage)
             delaysDifference.append(time.perf_counter() - timeStart)
             count = count + 1
-            if count % 5 == 0:
+            if count % 40 == 0:
                 print("Waiting on:" + step.imageName)
-            count = count + 1
+                if count % 600 == 0:
+                    dif.show()
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
         else:
@@ -255,11 +256,11 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.005)
+            time.sleep(0.1)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
     if hasattr(key, "char"):
         amt = 50
         if ctrlOn:
@@ -306,7 +307,7 @@ def on_release(key):
                     currentStageName = ""
             else:
                 stage = parseSteps(stage.nextStageName)
-                currentStep = 0
+                currentStep = 1
                 currentStageName = stage.name
                 print("ready: " + stage.name)
                 stepList = stage.steps

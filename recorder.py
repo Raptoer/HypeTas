@@ -50,24 +50,27 @@ def loopAndGrabImage():
     sct = mss()
     firstImage = None
     accumulatorImage = None
-    for i in range(20):
+    timeStart = time.perf_counter()
+    for i in range(40):
         try:
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             if not firstImage:
                 firstImage = im
             else:
-                im = PIL.ImageChops.difference(im, firstImage)
+                dif = PIL.ImageChops.difference(im, firstImage).convert("1", dither=None)
                 if not accumulatorImage:
-                    accumulatorImage = im
+                    accumulatorImage = dif
                 else:
-                    accumulatorImage = PIL.ImageChops.add(im, accumulatorImage)
+                    accumulatorImage = PIL.ImageChops.add(dif, accumulatorImage)
         except:
             print(sys.exc_info())
 
-    screen = PIL.ImageOps.invert(accumulatorImage.point(lambda x: 0 if x == 0 else 255))
+    print(time.perf_counter() - timeStart)
+    print((time.perf_counter() - timeStart) / 40)
+    screen = accumulatorImage.convert("RGB")
     im = ImageGrab.grab(bbox=bbox, childprocess=False)
-    im = PIL.ImageOps.invert(PIL.ImageChops.subtract(screen, im))
+    im = PIL.ImageChops.add(im, screen)
     return im
 
 def resetMouse():
@@ -343,7 +346,10 @@ def on_release(key):
             moveImages(currentStageName)
 
 def moveImages(currentStageName):
-    os.mkdir(".\\" + currentStageName)
+    try:
+        os.mkdir(".\\" + currentStageName)
+    except:
+        1
     for name in os.listdir("."):
         if name.endswith(".bmp"):
             shutil.move(name, currentStageName + "\\" + name)

@@ -12,6 +12,8 @@ class OutputType(Enum):
     CLICK_UNTIL = "CLICK_UNTIL"
     RESET="RESET"
     DELAY="DELAY"
+    ENTER="ENTER"
+    WAIT="WAIT"
 
 
 class Step:

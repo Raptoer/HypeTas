@@ -180,6 +180,11 @@ def replayStep(step: Step):
             dif = ImageChops.difference(im, step.readyImage)
             delaysDifference.append(time.perf_counter() - timeStart)
             count = count + 1
+            if step.output == OutputType.CLICK_UNTIL:
+                mouse.press(Button.left)
+                time.sleep(0.06)
+                mouse.release(Button.left)
+                print("click")
             if count % 40 == 0:
                 print("Waiting on:" + step.imageName)
                 if count % 600 == 0:
@@ -191,12 +196,17 @@ def replayStep(step: Step):
     if step.output == OutputType.UP:
         keyboard.press(Key.up)
         keyboard.release(Key.up)
+    if step.output == OutputType.WAIT:
+            time.sleep(0.05)
     if step.output == OutputType.LEFT:
         keyboard.press(Key.left)
         keyboard.release(Key.left)
     if step.output == OutputType.DOWN:
         keyboard.press(Key.down)
         keyboard.release(Key.down)
+    if step.output == OutputType.ENTER:
+        keyboard.press(Key.enter)
+        keyboard.release(Key.enter)
     if step.output == OutputType.RIGHT:
         keyboard.press(Key.right)
         keyboard.release(Key.right)

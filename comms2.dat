@@ -4,3 +4,4 @@ ENTER;.\comms2\2_f28ad.bmp;505,915
 WAIT
 RESET
 CLICK_UNTIL;.\comms2\7_811c1.bmp;0,0
+?comms3

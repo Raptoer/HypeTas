@@ -20,7 +20,6 @@ from step import parseSteps, formatStage, Step, OutputType, Stage
 
 keyboard = cont()
 
-shiftOn = False
 ctrlOn = False
 firstImage = False
 accumulatorImage = False
@@ -58,7 +57,7 @@ def loopAndGrabImage():
             if not firstImage:
                 firstImage = im
             else:
-                dif = PIL.ImageChops.difference(im, firstImage).convert("1", dither=None)
+                dif = PIL.ImageChops.difference(im, firstImage).convert("1", dither=0)
                 if not accumulatorImage:
                     accumulatorImage = dif
                 else:
@@ -187,7 +186,7 @@ def replayStep(step: Step):
                 print("click")
             if count % 40 == 0:
                 print("Waiting on:" + step.imageName)
-                if count % 600 == 0:
+                if count % 2000 == 0:
                     dif.show()
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
@@ -198,6 +197,10 @@ def replayStep(step: Step):
         keyboard.release(Key.up)
     if step.output == OutputType.WAIT:
             time.sleep(0.05)
+    if step.output == OutputType.WAIT_GAME:
+            time.sleep(0.05)
+            keyboard.press("w")
+            keyboard.release("w")
     if step.output == OutputType.LEFT:
         keyboard.press(Key.left)
         keyboard.release(Key.left)
@@ -239,15 +242,33 @@ def replayStep(step: Step):
         resetMouse()
     if step.output == OutputType.DELAY:
         delay = not delay
+    if step.output == OutputType.JACOB:
+        pressAndRelease("1")
+        pressAndRelease("2")
+        pressAndRelease("3")
+        pressAndRelease("4")
+        pressAndRelease("5")
+        pressAndRelease("6")
+        pressAndRelease("7")
+        pressAndRelease("2")
+        pressAndRelease("8")
+        pressAndRelease("8")
+        pressAndRelease("9")
+        pressAndRelease("0")
+        pressAndRelease(Key.enter)
     return currentStep
 
 override = False
+listen = True
+
+def pressAndRelease(key):
+    keyboard.press(key)
+    keyboard.release(key)
 
 def on_release(key):
     global ctrlOn
     global currentStageName
     global currentStep
-    global shiftOn
     global stepList
     global refImageName
     global stage
@@ -255,10 +276,10 @@ def on_release(key):
     global append
     global delay
     global override
+    global listen
+    if not listen:
+        return
     if hasattr(key, "name"):
-        if key.name == 'shift':
-            if shiftOn:
-                shiftOn = False
         if key.name == 'ctrl_l':
             ctrlOn = False
         if key.name == 'tab':
@@ -269,11 +290,11 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.1)
+            time.sleep(0.02)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
     if hasattr(key, "char"):
         amt = 50
         if ctrlOn:
@@ -366,10 +387,6 @@ def moveImages(currentStageName):
 
 def on_press(key):
     try:
-        if key.name == 'shift':
-            global shiftOn
-            if not shiftOn:
-                shiftOn = True
         if key.name == 'ctrl_l':
             global ctrlOn
             ctrlOn = True

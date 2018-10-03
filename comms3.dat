@@ -1,12 +1,13 @@
 LONG_CLICK;.\comms3\1_c374e.bmp;150,300
 LONG_CLICK;.\comms3\2_d88e5.bmp;50,80
+WAIT
 UP
+WAIT
 UP
+WAIT
 UP
 WAIT
 LONG_CLICK;.\comms3\7_60c3f.bmp;50,80
-RESET
-RESET
 RESET
 LONG_CLICK;.\comms3\11_81e8a.bmp;100,300
 LONG_CLICK;.\comms3\12_ce992.bmp;100,920
@@ -16,3 +17,10 @@ CLICK;.\comms3\15_2a18c.bmp;500,915
 DOWN;.\comms3\16_c3b81.bmp;
 LONG_CLICK;.\comms3\17_fe1fb.bmp;500,915
 JACOB;.\comms3\18_b9f3a.bmp;
+DOWN;.\comms3\17_82aea.bmp;
+ENTER;.\comms3\18_eeec5.bmp;500,915
+ENTER;.\comms3\19_e0280.bmp;500,915
+DOWN;.\comms3\20_d5233.bmp;
+DOWN;.\comms3\21_a2854.bmp;
+LONG_CLICK;.\comms3\22_f70d6.bmp;500,915
+?d22

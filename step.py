@@ -14,6 +14,8 @@ class OutputType(Enum):
     DELAY="DELAY"
     ENTER="ENTER"
     WAIT="WAIT"
+    JACOB="JACOB"
+    WAIT_GAME="WAIT_GAME"
 
 
 class Step:

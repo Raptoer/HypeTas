@@ -41,6 +41,8 @@ windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
 append = False
 
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 #loops for 20 runs and puts together the refImage
@@ -57,7 +59,7 @@ def loopAndGrabImage():
             if not firstImage:
                 firstImage = im
             else:
-                dif = PIL.ImageChops.difference(im, firstImage).convert("1", dither=0)
+                dif = PIL.ImageChops.difference(im, firstImage).convert("L").point((lambda x: 0 if x == 0 else 255))
                 if not accumulatorImage:
                     accumulatorImage = dif
                 else:
@@ -68,9 +70,9 @@ def loopAndGrabImage():
     print(time.perf_counter() - timeStart)
     print((time.perf_counter() - timeStart) / 40)
     screen = accumulatorImage.convert("RGB")
-    im = ImageGrab.grab(bbox=bbox, childprocess=False)
-    im = PIL.ImageChops.add(im, screen)
-    return im
+    sct_img = sct.grab(bbox)
+    im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+    return PIL.ImageChops.add(im, screen)
 
 def resetMouse():
     mouse.position = (-1300, -1300)
@@ -210,6 +212,11 @@ def replayStep(step: Step):
     if step.output == OutputType.ENTER:
         keyboard.press(Key.enter)
         keyboard.release(Key.enter)
+    if step.output == OutputType.ANIM_OFF:
+        keyboard.press(Key.f7)
+        keyboard.release(Key.f7)
+        keyboard.press(Key.f8)
+        keyboard.release(Key.f8)
     if step.output == OutputType.RIGHT:
         keyboard.press(Key.right)
         keyboard.release(Key.right)

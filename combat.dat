@@ -31,6 +31,7 @@ WAIT_GAME;.\combat\1_8debc.bmp;
 RESET;.\combat\2_96bef.bmp;
 WAIT_GAME;.\combat\1_8debc.bmp;
 RESET;.\combat\2_96bef.bmp;
+WAIT
 CLICK;.\combat\34_01501.bmp;350,350
 CLICK;.\combat\35_10925.bmp;5,85
 CLICK;.\combat\36_a66d9.bmp;5,85
@@ -42,6 +43,8 @@ ENTER;.\combat\41_33450.bmp;
 ENTER;.\combat\41_33450.bmp;
 ENTER;.\combat\41_33450.bmp;
 ENTER;.\combat\41_33450.bmp;
+ANIM_OFF;.\combat\44_b4590.bmp;
+RESET
 WAIT_GAME;.\combat\1_8debc.bmp;
 RESET;.\combat\2_96bef.bmp;
 WAIT_GAME;.\combat\1_8debc.bmp;
@@ -64,3 +67,16 @@ WAIT_GAME;.\combat\1_8debc.bmp;
 RESET;.\combat\2_96bef.bmp;
 WAIT_GAME;.\combat\1_8debc.bmp;
 RESET;.\combat\2_96bef.bmp;
+WAIT
+CLICK;.\combat\68_55715.bmp;350,350
+CLICK;.\combat\69_67d1b.bmp;20,80
+CLICK;.\combat\70_ff87d.bmp;20,80
+CLICK;.\combat\71_0e805.bmp;20,80
+CLICK;.\combat\72_829bf.bmp;40,730
+ENTER;.\combat\41_33450.bmp;
+ENTER;.\combat\41_33450.bmp;
+ENTER;.\combat\41_33450.bmp;
+ENTER;.\combat\41_33450.bmp;
+RESET;.\combat\44_b4590.bmp;
+ANIM_OFF
+?leaving

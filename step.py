@@ -17,6 +17,7 @@ class OutputType(Enum):
     JACOB="JACOB"
     WAIT_GAME="WAIT_GAME"
     ANIM_OFF="ANIM_OFF"
+    INV_LEFT="INV_LEFT"
 
 
 class Step:

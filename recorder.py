@@ -263,6 +263,10 @@ def replayStep(step: Step):
         pressAndRelease("9")
         pressAndRelease("0")
         pressAndRelease(Key.enter)
+    if step.output == OutputType.INV_LEFT:
+        moveMouse(0 - currentMov[0], (650 - currentMov[1]))
+        time.sleep(0.1)
+        moveMouse(0 - currentMov[0], (550 - currentMov[1]))
     return currentStep
 
 override = False

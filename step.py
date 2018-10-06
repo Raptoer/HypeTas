@@ -18,6 +18,8 @@ class OutputType(Enum):
     WAIT_GAME="WAIT_GAME"
     ANIM_OFF="ANIM_OFF"
     INV_LEFT="INV_LEFT"
+    ESCAPE="ESCAPE"
+    TARGET_JIFFY="TARGET_JIFFY"
 
 
 class Step:

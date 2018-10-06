@@ -1,3 +1,4 @@
+import math
 import os
 import random
 import shutil
@@ -5,13 +6,9 @@ import sys
 import time
 import win32gui
 
-from mss import mss
-
-
 import PIL
-import math
-import pyscreenshot as ImageGrab
-from PIL import ImageOps, ImageChops, Image
+from PIL import ImageChops, Image
+from mss import mss
 from pynput.keyboard import Listener, Key, Controller as cont, KeyCode
 from pynput.mouse import Button, Controller
 
@@ -41,8 +38,25 @@ windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
 append = False
 
-import numpy as np
-import matplotlib.pyplot as plt
+
+def loopUntilChange():
+    global bbox
+    sct = mss()
+    sct_img = sct.grab(bbox)
+    firstImage = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+    count = 0
+    while True:
+        count = count + 1
+        sct_img = sct.grab(bbox)
+        im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+        dif = PIL.ImageChops.difference(firstImage, im)
+        if dif is not None and dif.getbbox() is not None:
+            print("returning")
+            return im
+        if count > 500:
+            print("leaving")
+            return None
+
 
 
 #loops for 20 runs and puts together the refImage
@@ -51,8 +65,7 @@ def loopAndGrabImage():
     sct = mss()
     firstImage = None
     accumulatorImage = None
-    timeStart = time.perf_counter()
-    for i in range(40):
+    for i in range(20):
         try:
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -67,12 +80,8 @@ def loopAndGrabImage():
         except:
             print(sys.exc_info())
 
-    print(time.perf_counter() - timeStart)
-    print((time.perf_counter() - timeStart) / 40)
     screen = accumulatorImage.convert("RGB")
-    sct_img = sct.grab(bbox)
-    im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-    return PIL.ImageChops.add(im, screen)
+    return PIL.ImageChops.add(firstImage, screen)
 
 def resetMouse():
     mouse.position = (-1300, -1300)
@@ -150,6 +159,26 @@ def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
 
 sct = mss()
 
+def targetJiffy(im:Image):
+    whitePix = targetJiffyInner(im, (255, 255, 255))
+    if whitePix:
+        return whitePix
+    bluePix = targetJiffyInner(im, (159,198,255))
+    if bluePix:
+        return bluePix
+    return None
+
+
+def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
+    im = im.crop((50, 120, 600, 275))
+    found_pixels = [i for i, pixel in enumerate(im.getdata()) if pixel == targetPixel]
+    print(found_pixels)
+    found_pixels_coords = [divmod(index, im.size[0]) for index in found_pixels]
+    print(found_pixels_coords)
+    if len(found_pixels_coords) > 0:
+        return [found_pixels_coords[0][1] + 50, int((found_pixels_coords[0][0] + 120) * 1.85)]
+    return None
+
 def replayStep(step: Step):
     global currentStep
     global delay
@@ -162,38 +191,41 @@ def replayStep(step: Step):
         transparencyMask = ignoreMask.convert("1", dither = 0)
         ignoreMask.putalpha(transparencyMask)
         count = 0
-        delaysGrab = []
-        delaysConvert = []
-        delaysAlpha = []
-        delaysDifference = []
         while True:
-            timeStart = time.perf_counter()
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-            delaysGrab.append(time.perf_counter() - timeStart)
-            timeStart = time.perf_counter()
             im = im.convert("RGBA")
-            delaysConvert.append(time.perf_counter() - timeStart)
-            timeStart = time.perf_counter()
             im = Image.alpha_composite(im, ignoreMask)
-            delaysAlpha.append(time.perf_counter() - timeStart)
-            timeStart = time.perf_counter()
             dif = ImageChops.difference(im, step.readyImage)
-            delaysDifference.append(time.perf_counter() - timeStart)
             count = count + 1
             if step.output == OutputType.CLICK_UNTIL:
                 mouse.press(Button.left)
                 time.sleep(0.06)
                 mouse.release(Button.left)
                 print("click")
-            if count % 40 == 0:
+            if count % 50 == 0:
                 print("Waiting on:" + step.imageName)
                 if count % 2000 == 0:
                     dif.show()
+                    dif.save("dif.bmp")
+                    print(dif.getbbox())
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
         else:
             time.sleep(0.01)
+    if step.output == OutputType.TARGET_JIFFY:
+        sct_img = sct.grab(bbox)
+        im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+        coords = targetJiffy(im)
+        if coords is not None:
+            print("TARGET LOCK: " + str(coords))
+            moveMouse(coords[0] - currentMov[0], (coords[1] - currentMov[1]))
+            time.sleep(0.07)
+            mouse.press(Button.left)
+            time.sleep(0.02)
+            mouse.release(Button.left)
+        else:
+            print("TARGET FAILED TO COORD")
     if step.output == OutputType.UP:
         keyboard.press(Key.up)
         keyboard.release(Key.up)
@@ -203,6 +235,9 @@ def replayStep(step: Step):
             time.sleep(0.05)
             keyboard.press("w")
             keyboard.release("w")
+    if step.output == OutputType.ESCAPE:
+            keyboard.press(Key.esc)
+            keyboard.release(Key.esc)
     if step.output == OutputType.LEFT:
         keyboard.press(Key.left)
         keyboard.release(Key.left)
@@ -214,19 +249,24 @@ def replayStep(step: Step):
         keyboard.release(Key.enter)
     if step.output == OutputType.ANIM_OFF:
         keyboard.press(Key.f7)
+        time.sleep(0.02)
         keyboard.release(Key.f7)
+        time.sleep(0.02)
         keyboard.press(Key.f8)
+        time.sleep(0.02)
         keyboard.release(Key.f8)
+        time.sleep(0.02)
     if step.output == OutputType.RIGHT:
         keyboard.press(Key.right)
         keyboard.release(Key.right)
     if step.output == OutputType.CLICK:
-        moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-        if moved:
-            time.sleep(0.07)
-        if delay:
-            print("extra sleep")
-            time.sleep(0.1)
+        if step.clickPos:
+            moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
+            if moved:
+                time.sleep(0.07)
+            if delay:
+                print("extra sleep")
+                time.sleep(0.1)
         mouse.press(Button.left)
         time.sleep(0.02)
         if delay:
@@ -301,11 +341,42 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.02)
+            time.sleep(0.08)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            if ctrlOn:
+                loopUntilChange()
+                clickImage = loopAndGrabImage()
+        if key.name == 'end':
+            if not clickImage:
+               clickImage = loopAndGrabImage()
+            # save ref image and record click
+            mouse.press(Button.left)
+            time.sleep(0.08)
+            mouse.release(Button.left)
+            clickImageTemp = clickImage
+            clickImage = False
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            time.sleep(0.05)
+            clickImage = loopAndGrabImage()
+            # save ref image and record click
+            mouse.press(Button.left)
+            time.sleep(0.08)
+            mouse.release(Button.left)
+            clickImageTemp = clickImage
+            clickImage = False
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            time.sleep(0.05)
+            clickImage = loopAndGrabImage()
+            # save ref image and record click
+            mouse.press(Button.left)
+            time.sleep(0.08)
+            mouse.release(Button.left)
+            clickImageTemp = clickImage
+            clickImage = False
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
     if hasattr(key, "char"):
         amt = 50
         if ctrlOn:
@@ -321,21 +392,25 @@ def on_release(key):
         if key.char == 'i':
             preImage = loopAndGrabImage()
             keyboard.press(Key.up)
+            time.sleep(0.05)
             keyboard.release(Key.up)
             recordWalk(OutputType.UP, preImage)
         if key.char == 'j':
             preImage = loopAndGrabImage()
             keyboard.press(Key.left)
+            time.sleep(0.05)
             keyboard.release(Key.left)
             recordWalk(OutputType.LEFT, preImage)
         if key.char == 'k':
             preImage = loopAndGrabImage()
             keyboard.press(Key.down)
+            time.sleep(0.05)
             keyboard.release(Key.down)
             recordWalk(OutputType.DOWN, preImage)
         if key.char == 'l':
             preImage = loopAndGrabImage()
             keyboard.press(Key.right)
+            time.sleep(0.05)
             keyboard.release(Key.right)
             recordWalk(OutputType.RIGHT, preImage)
         if key.char == ';':
@@ -359,6 +434,13 @@ def on_release(key):
         if key.char == '\'':
             replayStep(stepList[currentStep])
             print("done: " + str(currentStep))
+        if key.char == 'z':
+            preImage = loopAndGrabImage()
+            keyboard.press(Key.f7)
+            keyboard.release(Key.f7)
+            keyboard.press(Key.f8)
+            keyboard.release(Key.f8)
+            recordWalk(OutputType.ANIM_OFF, preImage)
         if key.char == '[':
             # start playback
             if currentStageName != '' and not override:

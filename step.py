@@ -20,6 +20,7 @@ class OutputType(Enum):
     INV_LEFT="INV_LEFT"
     ESCAPE="ESCAPE"
     TARGET_JIFFY="TARGET_JIFFY"
+    MOVE="MOVE"
 
 
 class Step:

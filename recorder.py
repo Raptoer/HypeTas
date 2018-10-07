@@ -172,9 +172,7 @@ def targetJiffy(im:Image):
 def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
     im = im.crop((50, 120, 600, 275))
     found_pixels = [i for i, pixel in enumerate(im.getdata()) if pixel == targetPixel]
-    print(found_pixels)
     found_pixels_coords = [divmod(index, im.size[0]) for index in found_pixels]
-    print(found_pixels_coords)
     if len(found_pixels_coords) > 0:
         return [found_pixels_coords[0][1] + 50, int((found_pixels_coords[0][0] + 120) * 1.85)]
     return None
@@ -247,6 +245,8 @@ def replayStep(step: Step):
     if step.output == OutputType.ENTER:
         keyboard.press(Key.enter)
         keyboard.release(Key.enter)
+    if step.output == OutputType.MOVE:
+        moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
     if step.output == OutputType.ANIM_OFF:
         keyboard.press(Key.f7)
         time.sleep(0.02)
@@ -341,11 +341,11 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.08)
+            time.sleep(0.02)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
             if ctrlOn:
                 loopUntilChange()
                 clickImage = loopAndGrabImage()
@@ -354,21 +354,21 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.08)
+            time.sleep(0.02)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
             time.sleep(0.05)
             clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.08)
+            time.sleep(0.02)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
-            time.sleep(0.05)
+            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            loopUntilChange()
             clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)

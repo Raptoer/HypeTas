@@ -1,0 +1,8 @@
+RESET
+CLICK_UNTIL;.\tran\1_54820.bmp;0,0
+ANIM_OFF
+CLICK;;100,600
+CLICK;.\tran\6_4e6f2.bmp;100,600
+MOVE;;0,90
+CLICK;.\tran\7_87791.bmp;0,90
+CLICK;.\tran\8_2855c.bmp;0,90

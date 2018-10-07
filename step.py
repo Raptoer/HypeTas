@@ -21,6 +21,7 @@ class OutputType(Enum):
     ESCAPE="ESCAPE"
     TARGET_JIFFY="TARGET_JIFFY"
     MOVE="MOVE"
+    TIME="TIME"
 
 
 class Step:

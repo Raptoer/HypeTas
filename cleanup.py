@@ -1,6 +1,8 @@
 import os
 import re
 
+from PIL import Image
+
 import step
 
 list = os.listdir(".")
@@ -13,5 +15,4 @@ for i in list:
         print(dir)
         allFiles = os.listdir(dir + "\\")
         for f in allFiles:
-            if f not in files:
-                os.remove(dir + "\\" + f)
+            Image.open(f).save(f.replace(".bmp", ".png"), "png")

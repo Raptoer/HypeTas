@@ -1,3 +1,4 @@
+import datetime
 import math
 import os
 import random
@@ -307,10 +308,15 @@ def replayStep(step: Step):
         moveMouse(0 - currentMov[0], (650 - currentMov[1]))
         time.sleep(0.1)
         moveMouse(0 - currentMov[0], (550 - currentMov[1]))
+    if step.output == OutputType.TIME:
+        global startTime
+        print(datetime.datetime.utcnow() - startTime)
     return currentStep
 
 override = False
 listen = True
+startTime = None
+
 
 def pressAndRelease(key):
     keyboard.press(key)
@@ -327,6 +333,7 @@ def on_release(key):
     global append
     global delay
     global override
+    global startTime
     global listen
     if not listen:
         return
@@ -341,11 +348,11 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.02)
+            time.sleep(0.08)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
             if ctrlOn:
                 loopUntilChange()
                 clickImage = loopAndGrabImage()
@@ -354,20 +361,20 @@ def on_release(key):
                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.02)
+            time.sleep(0.08)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
             time.sleep(0.05)
             clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.02)
+            time.sleep(0.08)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
             loopUntilChange()
             clickImage = loopAndGrabImage()
             # save ref image and record click
@@ -426,6 +433,22 @@ def on_release(key):
                     currentStep = 0
                     currentStageName = ""
             else:
+                stage = parseSteps(stage.nextStageName)
+                currentStep = 1
+                currentStageName = stage.name
+                print("ready: " + stage.name)
+                stepList = stage.steps
+        if key.char == '/':
+            startTime = datetime.datetime.utcnow()
+            stage = parseSteps("d2")
+            currentStep = 1
+            currentStageName = stage.name
+            stepList = stage.steps
+            while stage.nextStageName is not None:
+                for x in stepList:
+                    replayStep(x)
+                print("done: " + currentStageName)
+                delay = False
                 stage = parseSteps(stage.nextStageName)
                 currentStep = 1
                 currentStageName = stage.name

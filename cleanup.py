@@ -8,11 +8,8 @@ import step
 list = os.listdir(".")
 for i in list:
     if i.endswith(".dat"):
-        stage = step.parseSteps(i.replace(".dat", ""))
-        files = [re.sub(".*?\\\\", "", s.imageName) for s in stage.steps if s.imageName is not None]
-        dir = stage.name
-        print(files)
-        print(dir)
+        dir = i.replace(".dat", "")
         allFiles = os.listdir(dir + "\\")
         for f in allFiles:
-            Image.open(f).save(f.replace(".bmp", ".png"), "png")
+            Image.open(dir + "\\" + f).save(dir+"\\" + f.replace(".bmp", ".png"), "png")
+            os.remove(dir + "\\" + f)

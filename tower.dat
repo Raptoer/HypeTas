@@ -1,5 +1,4 @@
 RESET
-RESET
 ANIM_OFF;.\tower\3_78e85.png;
 CLICK;.\tower\4_236c2.png;100,350
 ANIM_OFF;.\tower\5_c1e93.png;
@@ -16,6 +15,8 @@ ANIM_OFF;.\tower\15_6f994.png;
 CLICK;.\tower\16_ac0d6.png;550,350
 ANIM_OFF;.\tower\17_c47d3.png;
 CLICK;.\tower\18_d0df3.png;550,350
+ANIM_OFF;.\tower\17_c47d3.png;
+CLICK;.\tower\18_d0df3.png;550,350
 CLICK;.\tower\19_a4519.png;550,350
 CLICK;.\tower\20_62b07.png;550,350
 CLICK;.\tower\21_ffcfb.png;170,350
@@ -28,3 +29,4 @@ CLICK;.\tower\33_94f0a.png;50,620
 CLICK;.\tower\34_eb34e.png;300,570
 CLICK;.\tower\35_38151.png;300,570
 CLICK;.\tower\36_b970a.png;300,570
+?elf

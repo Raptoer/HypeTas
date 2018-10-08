@@ -4,6 +4,7 @@ import os
 import random
 import shutil
 import sys
+import threading
 import time
 import win32gui
 
@@ -131,7 +132,7 @@ def moveMouse(x, y, recordImage:bool = False):
         x = x - 230
         mouse.position = (windowXmiddle + (xPos * tempX), windowYMiddle + (yPos * tempY))
         if x > 0 or y > 0:
-            time.sleep(0.018)
+            time.sleep(0.03)
     return True
 
 
@@ -150,7 +151,7 @@ def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
         os.makedirs(".\\" + currentStageName)
     except:
         1
-    refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + "_" + '%05x' % random.randrange(16**5) +  ".bmp"
+    refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + "_" + '%05x' % random.randrange(16**5) +  ".png"
     if (refImage):
         refImage.save(refImageName)
         setStep(Step(currentStep, outputType, refImageName, refImage, current))
@@ -178,9 +179,32 @@ def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
         return [found_pixels_coords[0][1] + 50, int((found_pixels_coords[0][0] + 120) * 1.85)]
     return None
 
-def replayStep(step: Step):
+oldMov = []
+
+#grab a first image, then grab a next image, if nothing has changed, replay the step
+def threadedReattempt(step:Step, middleDelay:float, oldMovP):
+    global replayLast
+    global oldMov
+
+    sct2 = mss()
+    sct_img = sct2.grab(bbox)
+    im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+    time.sleep(middleDelay)
+
+    sct_img2 = sct2.grab(bbox)
+    im2 = Image.frombytes("RGB", sct_img2.size, sct_img2.bgra, "raw", "BGRX")
+    dif = ImageChops.difference(im, im2)
+    if dif.getbbox() is None or dif.getbbox()[3] < 20:
+        print("WARNING: REPLAYING ON FOR" + step.imageName)
+        replayLast = True
+        oldMov = oldMovP
+
+replayLast = False
+
+def replayStep(step: Step, previousStep:Step):
     global currentStep
     global delay
+    global replayLast
     currentStep  = currentStep + 1
     print("playing:" + str(currentStep))
     if step.readyImage is not None:
@@ -201,13 +225,24 @@ def replayStep(step: Step):
                 mouse.press(Button.left)
                 time.sleep(0.06)
                 mouse.release(Button.left)
-                print("click")
             if count % 50 == 0:
+                if replayLast:
+                    if previousStep is not None:
+                        print("WARNING: REPLAYING: " + previousStep.imageName)
+                        currentStep = currentStep - 1
+                        replayLast = False
+                        resetMouse(False)
+                        time.sleep(0.02)
+                        resetMouse(False)
+                        time.sleep(0.05)
+                        resetMouse(False)
+                        time.sleep(0.05)
+                        moveMouse(oldMov[0], oldMov[1])
+                        time.sleep(0.1)
+                        replayStep(previousStep, None)
+                    else:
+                        replayLast = False
                 print("Waiting on:" + step.imageName)
-                if count % 2000 == 0:
-                    dif.show()
-                    dif.save("dif.bmp")
-                    print(dif.getbbox())
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
         else:
@@ -249,6 +284,7 @@ def replayStep(step: Step):
     if step.output == OutputType.MOVE:
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
     if step.output == OutputType.ANIM_OFF:
+        print("anim off")
         keyboard.press(Key.f7)
         time.sleep(0.02)
         keyboard.release(Key.f7)
@@ -341,7 +377,7 @@ def on_release(key):
         if key.name == 'ctrl_l':
             ctrlOn = False
         if key.name == 'tab':
-            resetMouse()
+            resetMouse(True)
             recordWalk(OutputType.RESET, None)
         if key.name == 'space':
             if not clickImage:
@@ -421,8 +457,8 @@ def on_release(key):
             keyboard.release(Key.right)
             recordWalk(OutputType.RIGHT, preImage)
         if key.char == ';':
-            for x in stepList:
-                replayStep(x)
+            for idx, x in enumerate(stepList):
+                replayStep(x, stepList[idx-1] if idx > 0 else None)
             print("done: " + currentStageName)
             delay = False
             if stage.nextStageName is None:
@@ -441,12 +477,12 @@ def on_release(key):
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
             stage = parseSteps("d2")
-            currentStep = 1
+            currentStep = 0
             currentStageName = stage.name
             stepList = stage.steps
             while stage.nextStageName is not None:
-                for x in stepList:
-                    replayStep(x)
+                for idx, x in enumerate(stepList):
+                    replayStep(x, stepList[idx-1] if idx > 0 else None)
                 print("done: " + currentStageName)
                 delay = False
                 stage = parseSteps(stage.nextStageName)
@@ -455,7 +491,7 @@ def on_release(key):
                 print("ready: " + stage.name)
                 stepList = stage.steps
         if key.char == '\'':
-            replayStep(stepList[currentStep])
+            replayStep(stepList[currentStep], stepList[currentStep-1] if currentStep > 0 else None)
             print("done: " + str(currentStep))
         if key.char == 'z':
             preImage = loopAndGrabImage()
@@ -498,7 +534,7 @@ def moveImages(currentStageName):
     except:
         1
     for name in os.listdir("."):
-        if name.endswith(".bmp"):
+        if name.endswith(".png"):
             shutil.move(name, currentStageName + "\\" + name)
 
 def on_press(key):

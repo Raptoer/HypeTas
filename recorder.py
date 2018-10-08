@@ -21,11 +21,9 @@ keyboard = cont()
 
 ctrlOn = False
 firstImage = False
-accumulatorImage = False
 refImage = False
 currentMov = [0, 0]
 mouse = Controller()
-refImageName = None
 
 currentStageName = ''
 stepList = []
@@ -40,7 +38,8 @@ windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
 append = False
 
-
+#loop until the screen changes, then return the found image.
+#if it takes too long, just return
 def loopUntilChange():
     global bbox
     sct = mss()
@@ -64,7 +63,6 @@ def loopUntilChange():
 #loops for 20 runs and puts together the refImage
 def loopAndGrabImage():
     global bbox
-    sct = mss()
     firstImage = None
     accumulatorImage = None
     for i in range(20):
@@ -74,10 +72,13 @@ def loopAndGrabImage():
             if not firstImage:
                 firstImage = im
             else:
+                #take the new image, find the difference between it and the first image, convert it to greyscale, then make any colored pixel white
+                #the goal is to end up with a black image with only the differences in white
                 dif = PIL.ImageChops.difference(im, firstImage).convert("L").point((lambda x: 0 if x == 0 else 255))
                 if not accumulatorImage:
                     accumulatorImage = dif
                 else:
+                    #add the different difs together, so we end up with the union of all the differences
                     accumulatorImage = PIL.ImageChops.add(dif, accumulatorImage)
         except:
             print(sys.exc_info())
@@ -88,6 +89,7 @@ def loopAndGrabImage():
 def resetMouse():
     mouse.position = (-1300, -1300)
     print('Mouse reset')
+    #reset the text area, so we don't get differences between loads  and run throughs
     keyboard.press(KeyCode.from_char('N'))
     keyboard.release(KeyCode.from_char('N'))
     global currentMov
@@ -97,6 +99,7 @@ clickImage = False
 
 
 def moveMouse(x, y, recordImage:bool = False):
+    #we want to record the ref image before we move the mouse the first time
     if recordImage:
         global clickImage
         if not clickImage:
@@ -109,15 +112,18 @@ def moveMouse(x, y, recordImage:bool = False):
     currentMov[1] = currentMov[1] + y
     currentMov[1] = 0 if currentMov[1] < 0 else currentMov[1]
     print("moving mouse by:" + str(x) + "," + str(y) + " to " + str(currentMov[0]) + ", " + str(currentMov[1]))
+    #x and y positive
     xPos = 1 if x > 0 else -1
     yPos = 1 if y > 0 else -1
     x = math.fabs(x)
     y = math.fabs(y)
+    #if we're not moving, just exit
     if x == 0 and y == 0:
         return False
     while x > 0 or y > 0:
         tempX = 0
         tempY = 0
+        #we can only reliably move 230px in one go
         if x > 0:
             if x > 230:
                 tempX = 230
@@ -130,6 +136,7 @@ def moveMouse(x, y, recordImage:bool = False):
                 tempY = y
         y = y - 230
         x = x - 230
+        #windows always thinks the mouse is located at the middle of the window, even if we move it will end up back in the middle
         mouse.position = (windowXmiddle + (xPos * tempX), windowYMiddle + (yPos * tempY))
         if x > 0 or y > 0:
             time.sleep(0.03)
@@ -137,11 +144,7 @@ def moveMouse(x, y, recordImage:bool = False):
 
 
 def setStep(step):
-    if currentStep > len(stepList):
-        stepList.append(step)
-    else:
-        print("adding: " + step.output.name + " at " + str(currentStep-1) + " (0indexed)")
-        stepList[currentStep-1] = step
+    stepList.append(step)
 
 
 def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
@@ -172,32 +175,29 @@ def targetJiffy(im:Image):
 
 
 def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
+    #crop down to just the inner field
     im = im.crop((50, 120, 600, 275))
     found_pixels = [i for i, pixel in enumerate(im.getdata()) if pixel == targetPixel]
     found_pixels_coords = [divmod(index, im.size[0]) for index in found_pixels]
     if len(found_pixels_coords) > 0:
+        #50 and 120 are offsets caused by the cropping, 1.85 is a scaling factor caused by dosbox's mouse support
         return [found_pixels_coords[0][1] + 50, int((found_pixels_coords[0][0] + 120) * 1.85)]
     return None
 
-oldMov = []
 
-#grab a first image, then grab a next image, if nothing has changed, replay the step
-def threadedReattempt(step:Step, middleDelay:float, oldMovP):
+#grab a first image, then wait and grab a next image, if nothing has changed, replay the step
+def threadedReattempt(step:Step, middleDelay:float):
     global replayLast
-    global oldMov
-
     sct2 = mss()
     sct_img = sct2.grab(bbox)
     im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
     time.sleep(middleDelay)
-
     sct_img2 = sct2.grab(bbox)
     im2 = Image.frombytes("RGB", sct_img2.size, sct_img2.bgra, "raw", "BGRX")
     dif = ImageChops.difference(im, im2)
     if dif.getbbox() is None or dif.getbbox()[3] < 20:
         print("WARNING: REPLAYING ON FOR" + step.imageName)
         replayLast = True
-        oldMov = oldMovP
 
 replayLast = False
 
@@ -231,14 +231,6 @@ def replayStep(step: Step, previousStep:Step):
                         print("WARNING: REPLAYING: " + previousStep.imageName)
                         currentStep = currentStep - 1
                         replayLast = False
-                        resetMouse(False)
-                        time.sleep(0.02)
-                        resetMouse(False)
-                        time.sleep(0.05)
-                        resetMouse(False)
-                        time.sleep(0.05)
-                        moveMouse(oldMov[0], oldMov[1])
-                        time.sleep(0.1)
                         replayStep(previousStep, None)
                     else:
                         replayLast = False
@@ -304,6 +296,8 @@ def replayStep(step: Step, previousStep:Step):
             if delay:
                 print("extra sleep")
                 time.sleep(0.1)
+        thread = threading.Thread(target=threadedReattempt, args=(step,0.5))
+        thread.start()
         mouse.press(Button.left)
         time.sleep(0.02)
         if delay:
@@ -313,6 +307,8 @@ def replayStep(step: Step, previousStep:Step):
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         if moved:
             time.sleep(0.07)
+        thread = threading.Thread(target=threadedReattempt, args=(step,0.5))
+        thread.start()
         mouse.press(Button.left)
         time.sleep(0.1)
         mouse.release(Button.left)
@@ -359,11 +355,11 @@ def pressAndRelease(key):
     keyboard.release(key)
 
 def on_release(key):
+    #I'm somewhat embarassed by how many global variables I use here
     global ctrlOn
     global currentStageName
     global currentStep
     global stepList
-    global refImageName
     global stage
     global clickImage
     global append
@@ -377,7 +373,7 @@ def on_release(key):
         if key.name == 'ctrl_l':
             ctrlOn = False
         if key.name == 'tab':
-            resetMouse(True)
+            resetMouse()
             recordWalk(OutputType.RESET, None)
         if key.name == 'space':
             if not clickImage:
@@ -480,10 +476,12 @@ def on_release(key):
             currentStep = 0
             currentStageName = stage.name
             stepList = stage.steps
-            while stage.nextStageName is not None:
+            while True:
                 for idx, x in enumerate(stepList):
                     replayStep(x, stepList[idx-1] if idx > 0 else None)
                 print("done: " + currentStageName)
+                if stage.nextStageName is None:
+                    break
                 delay = False
                 stage = parseSteps(stage.nextStageName)
                 currentStep = 1
@@ -528,6 +526,8 @@ def on_release(key):
             f.write(stage)
             moveImages(currentStageName)
 
+
+#moves the images currently saved in root down into a stage's dir
 def moveImages(currentStageName):
     try:
         os.mkdir(".\\" + currentStageName)
@@ -537,6 +537,7 @@ def moveImages(currentStageName):
         if name.endswith(".png"):
             shutil.move(name, currentStageName + "\\" + name)
 
+#since we can't detect if control is pressed, we need to record it ourselves
 def on_press(key):
     try:
         if key.name == 'ctrl_l':
@@ -548,9 +549,3 @@ def on_press(key):
 
 with Listener(on_press=on_press, on_release=on_release) as listener:
     listener.join()
-
-    # hokai, so
-    # push edcv to move cursor
-    # hold down shift to start capturing
-    # release shift, take final image. Push space to indicate click is output
-    # otherwise push ijkl to indicate direction key

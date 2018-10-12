@@ -1,8 +1,8 @@
 RESET
-LONG_CLICK;.\d2\2_cc112.bmp;270,450
-LONG_CLICK;.\d2\3_bfd42.bmp;270,450
-LONG_CLICK;.\d2\4_62e85.bmp;270,450
-ANIM_OFF;.\d2\5_9efb7.bmp;
+LONG_CLICK;.\d2\2_cc112.png;270,450
+LONG_CLICK;.\d2\3_bfd42.png;270,450
+LONG_CLICK;.\d2\4_62e85.png;270,450
+ANIM_OFF;.\d2\5_9efb7.png;
 RESET
 UP;.\d2\2.png;
 RIGHT;.\d2\3.png;

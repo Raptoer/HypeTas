@@ -201,10 +201,13 @@ def threadedReattempt(step:Step, middleDelay:float):
 
 replayLast = False
 
+timedDelays = 0
+
 def replayStep(step: Step, previousStep:Step):
     global currentStep
     global delay
     global replayLast
+    global timedDelays
     currentStep  = currentStep + 1
     print("playing:" + str(currentStep))
     if step.readyImage is not None:
@@ -225,15 +228,17 @@ def replayStep(step: Step, previousStep:Step):
                 mouse.press(Button.left)
                 time.sleep(0.06)
                 mouse.release(Button.left)
+            if replayLast:
+                if previousStep:
+                    print("WARNING: REPLAYING: " + previousStep.imageName)
+                    currentStep = currentStep - 1
+                    replayLast = False
+                    thread = threading.Thread(target=threadedReattempt, args=(step,0.3))
+                    thread.start()
+                    mouse.press(Button.left)
+                    time.sleep(0.02)
+                    mouse.release(Button.left)
             if count % 50 == 0:
-                if replayLast:
-                    if previousStep is not None:
-                        print("WARNING: REPLAYING: " + previousStep.imageName)
-                        currentStep = currentStep - 1
-                        replayLast = False
-                        replayStep(previousStep, None)
-                    else:
-                        replayLast = False
                 print("Waiting on:" + step.imageName)
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
@@ -250,6 +255,8 @@ def replayStep(step: Step, previousStep:Step):
             mouse.press(Button.left)
             time.sleep(0.02)
             mouse.release(Button.left)
+
+            timedDelays += 0.09
         else:
             print("TARGET FAILED TO COORD")
     if step.output == OutputType.UP:
@@ -257,8 +264,10 @@ def replayStep(step: Step, previousStep:Step):
         keyboard.release(Key.up)
     if step.output == OutputType.WAIT:
             time.sleep(0.05)
+            timedDelays += 0.05
     if step.output == OutputType.WAIT_GAME:
             time.sleep(0.05)
+            timedDelays += 0.05
             keyboard.press("w")
             keyboard.release("w")
     if step.output == OutputType.ESCAPE:
@@ -285,6 +294,7 @@ def replayStep(step: Step, previousStep:Step):
         time.sleep(0.02)
         keyboard.release(Key.f8)
         time.sleep(0.02)
+        timedDelays += 0.08
     if step.output == OutputType.RIGHT:
         keyboard.press(Key.right)
         keyboard.release(Key.right)
@@ -293,24 +303,33 @@ def replayStep(step: Step, previousStep:Step):
             moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
             if moved:
                 time.sleep(0.07)
+                timedDelays += 0.07
             if delay:
                 print("extra sleep")
                 time.sleep(0.1)
-        thread = threading.Thread(target=threadedReattempt, args=(step,0.5))
+                timedDelays += 0.1
+        thread = threading.Thread(target=threadedReattempt, args=(step,0.2))
         thread.start()
         mouse.press(Button.left)
         time.sleep(0.02)
+
+        timedDelays += 0.02
         if delay:
             time.sleep(0.03)
+
+            timedDelays += 0.04
         mouse.release(Button.left)
     if step.output == OutputType.LONG_CLICK:
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         if moved:
             time.sleep(0.07)
-        thread = threading.Thread(target=threadedReattempt, args=(step,0.5))
+
+            timedDelays += 0.08
+        thread = threading.Thread(target=threadedReattempt, args=(step,0.2))
         thread.start()
         mouse.press(Button.left)
         time.sleep(0.1)
+        timedDelays += 0.1
         mouse.release(Button.left)
     if step.output == OutputType.RESET:
         resetMouse()
@@ -320,6 +339,8 @@ def replayStep(step: Step, previousStep:Step):
         resetMouse()
         time.sleep(0.02)
         resetMouse()
+
+        timedDelays += 0.06
     if step.output == OutputType.DELAY:
         delay = not delay
     if step.output == OutputType.JACOB:
@@ -343,6 +364,7 @@ def replayStep(step: Step, previousStep:Step):
     if step.output == OutputType.TIME:
         global startTime
         print(datetime.datetime.utcnow() - startTime)
+        print(timedDelays)
     return currentStep
 
 override = False
@@ -472,24 +494,21 @@ def on_release(key):
                 stepList = stage.steps
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
-            stage = parseSteps("d2")
-            currentStep = 0
-            currentStageName = stage.name
-            stepList = stage.steps
+            stages = [parseSteps("d2")]
             while True:
+                stages.append(parseSteps(stages[len(stages)-1].nextStageName))
+                if stages[len(stages)-1].nextStageName is None:
+                    break
+            for stage in stages:
+                currentStep = 0
+                delay = False
+                currentStageName = stage.name
+                stepList = stage.steps
                 for idx, x in enumerate(stepList):
                     replayStep(x, stepList[idx-1] if idx > 0 else None)
                 print("done: " + currentStageName)
-                if stage.nextStageName is None:
-                    break
-                delay = False
-                stage = parseSteps(stage.nextStageName)
-                currentStep = 1
-                currentStageName = stage.name
-                print("ready: " + stage.name)
-                stepList = stage.steps
         if key.char == '\'':
-            replayStep(stepList[currentStep], stepList[currentStep-1] if currentStep > 0 else None)
+            replayStep(stepList[currentStep], None)
             print("done: " + str(currentStep))
         if key.char == 'z':
             preImage = loopAndGrabImage()

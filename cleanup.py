@@ -11,5 +11,16 @@ for i in list:
         dir = i.replace(".dat", "")
         allFiles = os.listdir(dir + "\\")
         for f in allFiles:
+            if f.endswith(".bmp"):
+                Image.open(dir + "\\" + f).save(dir+"\\" + f.replace(".bmp", ".png"), "png")
+                os.remove(dir + "\\" + f)
+
+
+list = os.listdir(".")
+for i in list:
+    if i.endswith(".dat"):
+        dir = i.replace(".dat", "")
+        allFiles = os.listdir(dir + "\\")
+        for f in allFiles:
             Image.open(dir + "\\" + f).save(dir+"\\" + f.replace(".bmp", ".png"), "png")
             os.remove(dir + "\\" + f)

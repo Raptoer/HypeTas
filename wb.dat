@@ -1,5 +1,4 @@
 RESET
-RESET
 LEFT;.\wb\3_142c3.png;
 UP;.\wb\4_92ada.png;
 CLICK;.\wb\5_671e6.png;350,300
@@ -16,6 +15,7 @@ UP;.\wb\15_b6dcc.png;
 CLICK;.\wb\16_65426.png;520,500
 CLICK;.\wb\17_e19cc.png;520,500
 CLICK;.\wb\18_2eca3.png;370,455
+ENTER;.\wb\18_c19fb.png;
 UP;.\wb\19_e0b98.png;
 UP;.\wb\20_2895d.png;
 UP;.\wb\21_94302.png;

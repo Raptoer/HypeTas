@@ -185,22 +185,6 @@ def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
     return None
 
 
-#grab a first image, then wait and grab a next image, if nothing has changed, replay the step
-def threadedReattempt(step:Step, middleDelay:float):
-    global replayLast
-    if not delay:
-        sct2 = mss()
-        sct_img = sct2.grab(bbox)
-        im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        time.sleep(middleDelay)
-        sct_img2 = sct2.grab(bbox)
-        im2 = Image.frombytes("RGB", sct_img2.size, sct_img2.bgra, "raw", "BGRX")
-        dif = ImageChops.difference(im, im2)
-        if dif.getbbox() is None or dif.getbbox()[3] < 20:
-            print("WARNING: REPLAYING ON FOR" + step.imageName)
-            replayLast = True
-
-replayLast = False
 
 timedDelays = 0
 
@@ -238,16 +222,6 @@ def replayStep(step: Step, previousStep:Step):
             if step.output == OutputType.ENTER_UNTIL:
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
-            if replayLast:
-                if previousStep:
-                    print("WARNING: REPLAYING: " + previousStep.imageName)
-                    currentStep = currentStep - 1
-                    replayLast = False
-                    thread = threading.Thread(target=threadedReattempt, args=(step,0.3))
-                    thread.start()
-                    mouse.press(Button.left)
-                    time.sleep(0.02)
-                    mouse.release(Button.left)
             if count % 50 == 0:
                 print("Waiting on:" + step.imageName)
                 if step.imageName.endswith("63_96d7a.png"):
@@ -255,8 +229,6 @@ def replayStep(step: Step, previousStep:Step):
                     dif.save("dif.png")
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
-        else:
-            time.sleep(0.01)
     if step.output == OutputType.TARGET_JIFFY:
         sct_img = sct.grab(bbox)
         im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -321,8 +293,6 @@ def replayStep(step: Step, previousStep:Step):
                 print("extra sleep")
                 time.sleep(0.1)
                 timedDelays += 0.1
-        thread = threading.Thread(target=threadedReattempt, args=(step,0.2))
-        thread.start()
         mouse.press(Button.left)
         time.sleep(0.02)
         timedDelays += 0.02
@@ -334,10 +304,7 @@ def replayStep(step: Step, previousStep:Step):
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
         if moved:
             time.sleep(0.07)
-
-            timedDelays += 0.08
-        thread = threading.Thread(target=threadedReattempt, args=(step,0.2))
-        thread.start()
+            timedDelays += 0.07
         mouse.press(Button.left)
         time.sleep(0.1)
         timedDelays += 0.1

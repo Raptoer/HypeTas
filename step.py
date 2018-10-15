@@ -9,7 +9,7 @@ class OutputType(Enum):
     W = "W"
     CLICK = "CLK"
     LONG_CLICK = "LONG_CLICK"
-    CLICK_UNTIL = "CLICK_UNTIL"
+    ENTER_UNTIL = "ENTER_UNTIL"
     RESET="RESET"
     DELAY="DELAY"
     ENTER="ENTER"
@@ -31,6 +31,8 @@ class Step:
         self.imageName = imageName
         self.readyImage = readyImage
         self.clickPos = clickPos
+        if readyImage is not None and len(self.readyImage.getbands()) > 3:
+            self.hasAlpha = self.readyImage.histogram()[768] > 0
 
 class Stage:
     def __init__(self, name: str, steps: [], nextStage:str=''):

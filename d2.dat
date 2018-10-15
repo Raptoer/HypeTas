@@ -1,7 +1,7 @@
 RESET
 LONG_CLICK;.\d2\2_cc112.png;270,450
-LONG_CLICK;.\d2\3_bfd42.png;270,450
-LONG_CLICK;.\d2\4_62e85.png;270,450
+ENTER;.\d2\3_bfd42.png;270,450
+ENTER;.\d2\4_62e85.png;270,450
 ANIM_OFF;.\d2\5_9efb7.png;
 RESET
 UP;.\d2\2.png;
@@ -67,12 +67,12 @@ CLICK;.\d2\61_f8059.png;505,285
 CLICK;.\d2\62_aca3b.png;505,285
 CLICK;.\d2\63_d9f4b.png;505,285
 CLICK;.\d2\64_cdaae.png;505,270
-CLICK;.\d2\65_9af05.png;505,270
-CLICK;.\d2\66_2506b.png;505,270
-CLICK;.\d2\67_df2c2.png;505,270
+ENTER;.\d2\65_9af05.png;
+ENTER;.\d2\66_2506b.png;
+ENTER;.\d2\67_df2c2.png;
 CLICK;.\d2\68_88ec3.png;155,620
 CLICK;.\d2\69_7083a.png;405,470
-CLICK;.\d2\70_f5b62.png;405,470
+ENTER;.\d2\70_f5b62.png;
 CLICK;.\d2\71_736fd.png;255,620
 CLICK;.\d2\72_1d2f1.png;450,470
 LEFT;.\d2\73_3fe7a.png;

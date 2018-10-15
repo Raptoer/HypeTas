@@ -34,8 +34,8 @@ RESET;.\combat\2_96bef.png;
 WAIT
 CLICK;.\combat\34_01501.png;350,350
 CLICK;.\combat\35_10925.png;5,85
-CLICK;.\combat\36_a66d9.png;5,85
-CLICK;.\combat\37_86f00.png;5,85
+ENTER;.\combat\36_a66d9.png;
+ENTER;.\combat\37_86f00.png;
 CLICK;.\combat\38_72d0a.png;255,485
 CLICK;.\combat\39_98472.png;255,465
 CLICK;.\combat\40_85677.png;130,745
@@ -70,8 +70,8 @@ RESET;.\combat\2_96bef.png;
 WAIT
 CLICK;.\combat\68_55715.png;350,350
 CLICK;.\combat\69_67d1b.png;20,80
-CLICK;.\combat\70_ff87d.png;20,80
-CLICK;.\combat\71_0e805.png;20,80
+ENTER;.\combat\70_ff87d.png;
+ENTER;.\combat\71_0e805.png;
 CLICK;.\combat\72_829bf.png;40,730
 ENTER;.\combat\41_33450.png;
 ENTER;.\combat\41_33450.png;

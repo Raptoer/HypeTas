@@ -188,16 +188,17 @@ def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
 #grab a first image, then wait and grab a next image, if nothing has changed, replay the step
 def threadedReattempt(step:Step, middleDelay:float):
     global replayLast
-    sct2 = mss()
-    sct_img = sct2.grab(bbox)
-    im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-    time.sleep(middleDelay)
-    sct_img2 = sct2.grab(bbox)
-    im2 = Image.frombytes("RGB", sct_img2.size, sct_img2.bgra, "raw", "BGRX")
-    dif = ImageChops.difference(im, im2)
-    if dif.getbbox() is None or dif.getbbox()[3] < 20:
-        print("WARNING: REPLAYING ON FOR" + step.imageName)
-        replayLast = True
+    if not delay:
+        sct2 = mss()
+        sct_img = sct2.grab(bbox)
+        im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+        time.sleep(middleDelay)
+        sct_img2 = sct2.grab(bbox)
+        im2 = Image.frombytes("RGB", sct_img2.size, sct_img2.bgra, "raw", "BGRX")
+        dif = ImageChops.difference(im, im2)
+        if dif.getbbox() is None or dif.getbbox()[3] < 20:
+            print("WARNING: REPLAYING ON FOR" + step.imageName)
+            replayLast = True
 
 replayLast = False
 
@@ -213,21 +214,30 @@ def replayStep(step: Step, previousStep:Step):
     if step.readyImage is not None:
         count = 0
         #if difference between current image and reference image is all black
-        ignoreMask = step.readyImage.point(lambda x: 255 if x == 255 else 0)
-        transparencyMask = ignoreMask.convert("1", dither = 0)
-        ignoreMask.putalpha(transparencyMask)
+        if step.hasAlpha:
+            #create out ignore mask, this is an image where any transparent part of the readyImage will be transparent on the check image
+            ignoreMask = step.readyImage
+        else:
+            #create our ignore mask, this is an image where any white part of the readyImage will be white on the check image
+            ignoreMask = step.readyImage.point(lambda x: 255 if x == 255 else 0)
+            transparencyMask = ignoreMask.convert("1", dither = 0)
+            ignoreMask.putalpha(transparencyMask)
         count = 0
         while True:
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             im = im.convert("RGBA")
-            im = Image.alpha_composite(im, ignoreMask)
-            dif = ImageChops.difference(im, step.readyImage)
+            if step.hasAlpha:
+                print(step.imageName + " has alpha")
+                im2 = Image.alpha_composite(im, ignoreMask)
+                dif = ImageChops.difference(im2, im)
+            else:
+                im = Image.alpha_composite(im, ignoreMask)
+                dif = ImageChops.difference(im, step.readyImage)
             count = count + 1
-            if step.output == OutputType.CLICK_UNTIL:
-                mouse.press(Button.left)
-                time.sleep(0.06)
-                mouse.release(Button.left)
+            if step.output == OutputType.ENTER_UNTIL:
+                keyboard.press(Key.enter)
+                keyboard.release(Key.enter)
             if replayLast:
                 if previousStep:
                     print("WARNING: REPLAYING: " + previousStep.imageName)
@@ -240,6 +250,9 @@ def replayStep(step: Step, previousStep:Step):
                     mouse.release(Button.left)
             if count % 50 == 0:
                 print("Waiting on:" + step.imageName)
+                if step.imageName.endswith("63_96d7a.png"):
+                    dif.show()
+                    dif.save("dif.png")
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
         else:
@@ -312,12 +325,10 @@ def replayStep(step: Step, previousStep:Step):
         thread.start()
         mouse.press(Button.left)
         time.sleep(0.02)
-
         timedDelays += 0.02
         if delay:
             time.sleep(0.03)
-
-            timedDelays += 0.04
+            timedDelays += 0.03
         mouse.release(Button.left)
     if step.output == OutputType.LONG_CLICK:
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
@@ -406,7 +417,7 @@ def on_release(key):
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
-            recordWalk(OutputType.LONG_CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
             if ctrlOn:
                 loopUntilChange()
                 clickImage = loopAndGrabImage()
@@ -494,7 +505,10 @@ def on_release(key):
                 stepList = stage.steps
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
-            stages = [parseSteps("d2")]
+            if len(currentStageName) == 0:
+                stages = [parseSteps("d2")]
+            else:
+                stages = [parseSteps(currentStageName)]
             while True:
                 stages.append(parseSteps(stages[len(stages)-1].nextStageName))
                 if stages[len(stages)-1].nextStageName is None:

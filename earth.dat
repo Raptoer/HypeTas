@@ -25,11 +25,7 @@ CLICK;.\earth\24_bdcea.png;35,630
 CLICK;.\earth\25_ddbb9.png;255,580
 CLICK;.\earth\26_e633b.png;255,580
 CLICK;.\earth\27_4de52.png;105,80
-CLICK;.\earth\28_1bf63.png;105,80
-CLICK;.\earth\29_0b589.png;105,80
-CLICK;.\earth\30_2ab41.png;105,80
-CLICK;.\earth\31_fea78.png;105,80
-CLICK;.\earth\32_a4cf7.png;105,80
+ENTER_UNTIL;.\earth\33_dabf3.png;
 CLICK;.\earth\33_dabf3.png;655,180
 CLICK;.\earth\34_5f2f9.png;350,330
 CLICK;.\earth\36_c0f69.png;400,330
@@ -48,7 +44,7 @@ CLICK;.\earth\48_b8341.png;115,80
 CLICK;.\earth\49_585e1.png;115,80
 CLICK;.\earth\50_8177c.png;115,80
 CLICK;.\earth\51_4173b.png;115,80
-LONG_CLICK;.\earth\52_5a113.png;115,80
+ENTER;.\earth\52_5a113.png;115,80
 LEFT;.\earth\53_43ee5.png;
 LEFT;.\earth\54_1b685.png;
 CLICK;.\earth\55_8795b.png;465,80
@@ -57,6 +53,6 @@ CLICK;.\earth\58_b9b32.png;665,430
 CLICK;.\earth\59_8fdfd.png;665,430
 CLICK;.\earth\60_6d6d1.png;165,380
 CLICK;.\earth\61_93212.png;365,380
-CLICK;.\earth\62_d9555.png;365,380
+ENTER_UNTIL;.\earth\3_78e85.png;
 RESET;.\earth\3_78e85.png;
 ?tower

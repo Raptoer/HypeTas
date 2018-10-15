@@ -100,5 +100,5 @@ CLICK;.\inside\101_7a199.png;265,520
 CLICK;.\inside\102_5e34f.png;265,620
 CLICK;.\inside\103_d2b8a.png;265,520
 CLICK;.\inside\104_1ba05.png;265,520
-CLICK_UNTIL;.\inside\128_109e1.png;265,520
+ENTER_UNTIL;.\inside\128_109e1.png;265,520
 ?earth

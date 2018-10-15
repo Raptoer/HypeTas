@@ -1,5 +1,5 @@
 RESET
-CLICK_UNTIL;.\tran\1_54820.png;0,0
+ENTER_UNTIL;.\tran\1_54820.png;0,0
 ANIM_OFF
 WAIT
 WAIT
@@ -7,7 +7,7 @@ WAIT
 LONG_CLICK;;100,600
 MOVE;;0,90
 LONG_CLICK;.\tran\7_87791.png;0,90
-LONG_CLICK;.\tran\8_2855c.png;0,90
+ENTER;.\tran\8_2855c.png;0,90
 LONG_CLICK;.\tran\12_b3564.png;50,640
 LONG_CLICK;.\tran\13_55983.png;50,90
 LONG_CLICK;.\tran\14_72038.png;245,445
@@ -15,7 +15,6 @@ LONG_CLICK;.\tran\23_9e41d.png;295,355
 LONG_CLICK;.\tran\24_88f2f.png;345,355
 LONG_CLICK;.\tran\25_46b87.png;495,355
 RESET
-CLICK_UNTIL;.\tran\5_9a853.png;0,0
-LONG_CLICK;.\tran\6_b02ee.png;215,465
-LONG_CLICK;.\tran\7_8e083.png;215,745
+ENTER_UNTIL;.\tran\44_4882d.png;
+MOVE;;0,90
 TIME;.\tran\8_70d52.png;

@@ -1,4 +1,5 @@
 CLICK;.\d3\1_bddbd.png;370,290
+ENTER;.\d3\elevatorSkip.png;
 UP;.\d3\2_57ad9.png;
 UP;.\d3\3_dd253.png;
 RIGHT;.\d3\4_de10f.png;
@@ -23,10 +24,10 @@ UP;.\d3\22_c06eb.png;
 RIGHT;.\d3\23_5db46.png;
 CLICK;.\d3\24_fd603.png;535,180
 CLICK;.\d3\25_e898d.png;535,180
-CLICK;.\d3\26_ccb7e.png;535,180
-CLICK;.\d3\27_b56af.png;535,180
-CLICK;.\d3\28_f0677.png;535,180
-CLICK;.\d3\29_a8985.png;535,180
+ENTER;.\d3\26_ccb7e.png;
+ENTER;.\d3\27_b56af.png;535,180
+ENTER;.\d3\28_f0677.png;535,180
+ENTER;.\d3\29_a8985.png;535,180
 CLICK;.\d3\30_b4101.png;535,180
 CLICK;.\d3\31_c76b8.png;185,480
 CLICK;.\d3\32_c1150.png;35,80
@@ -34,7 +35,7 @@ CLICK;.\d3\33_7260c.png;220,480
 CLICK;.\d3\34_6706b.png;70,115
 CLICK;.\d3\35_87fa6.png;65,665
 CLICK;.\d3\36_46d25.png;65,65
-CLICK;.\d3\37_20ae0.png;65,65
+ENTER;.\d3\37_20ae0.png;65,65
 LEFT;.\d3\38_09051.png;
 CLICK;.\d3\39_86616.png;265,215
 CLICK;.\d3\40_ab497.png;265,215

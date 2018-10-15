@@ -1,7 +1,7 @@
 RESET
 CLICK;.\elf\4_3055c.png;250,350
 CLICK;.\elf\5_cca6c.png;50,85
-CLICK_UNTIL;.\elf\8_347b2.png;50,85
+ENTER_UNTIL;.\elf\5_0edd7.png;100,135
 CLICK;.\elf\5_0edd7.png;100,135
 CLICK;.\elf\6_50d25.png;100,135
 CLICK;.\elf\7_e8efd.png;100,135

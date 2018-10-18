@@ -6,7 +6,7 @@ CLICK;.\space\5_69274.png;200,470
 CLICK;.\space\6_21610.png;200,470
 CLICK;.\space\7_2bc6a.png;200,470
 CLICK;.\space\8_769c9.png;200,420
-LONG_CLICK;.\space\9_81c50.png;200,420
+ENTER;.\space\9_81c50.png;200,420
 CLICK;.\space\10_b87c9.png;400,420
 CLICK;.\space\11_7ff38.png;400,770
 RIGHT;.\space\1_2fc2a.png;
@@ -63,7 +63,7 @@ UP;.\space\62_1c049.png;
 CLICK;.\space\63_50aa7.png;285,480
 CLICK;.\space\64_53b74.png;285,480
 CLICK;.\space\65_9231b.png;185,480
-LONG_CLICK;.\space\66_ba29c.png;185,480
+ENTER;.\space\66_ba29c.png;185,480
 CLICK;.\space\67_e29cd.png;385,480
 CLICK;.\space\68_f8cfb.png;185,330
 CLICK;.\space\69_cb87f.png;385,330

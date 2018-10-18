@@ -27,11 +27,11 @@ CLICK;.\leaving\24_971b7.png;230,425
 CLICK;.\leaving\25_08935.png;230,475
 CLICK;.\leaving\26_45760.png;230,475
 CLICK;.\leaving\27_e24d2.png;180,425
-LONG_CLICK;.\leaving\28_83787.png;180,425
+ENTER;.\leaving\28_83787.png;180,425
 CLICK;.\leaving\29_14667.png;30,325
-LONG_CLICK;.\leaving\30_e39cc.png;30,325
+ENTER;.\leaving\30_e39cc.png;30,325
 CLICK;.\leaving\31_29c57.png;190,510
-LONG_CLICK;.\leaving\32_4d62d.png;190,510
+ENTER;.\leaving\32_4d62d.png;190,510
 CLICK;.\leaving\33_2794c.png;190,350
 CLICK;.\leaving\34_19a0b.png;390,400
 CLICK;.\leaving\35_89f88.png;390,800
@@ -73,7 +73,7 @@ CLICK;.\leaving\70_83692.png;50,85
 CLICK;.\leaving\71_22f95.png;50,485
 CLICK;.\leaving\72_2965c.png;50,485
 CLICK;.\leaving\73_d67d7.png;200,435
-LONG_CLICK;.\leaving\74_68123.png;200,435
+ENTER;.\leaving\74_68123.png;200,435
 CLICK;.\leaving\75_bd538.png;200,835
 RIGHT;.\leaving\76_685f6.png;
 UP;.\leaving\77_96558.png;

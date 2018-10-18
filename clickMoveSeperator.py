@@ -36,28 +36,6 @@ hwndChild = win32gui.GetWindowRect(window)
 bbox = (hwndChild[0] + 4, hwndChild[1] + 4, hwndChild[2] - 4, hwndChild[3] - 4)
 windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
-append = False
-
-#loop until the screen changes, then return the found image.
-#if it takes too long, just return
-def loopUntilChange():
-    global bbox
-    sct = mss()
-    sct_img = sct.grab(bbox)
-    firstImage = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-    count = 0
-    while True:
-        count = count + 1
-        sct_img = sct.grab(bbox)
-        im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        dif = PIL.ImageChops.difference(firstImage, im)
-        if dif is not None and dif.getbbox() is not None:
-            print("returning")
-            return im
-        if count > 500:
-            print("leaving")
-            return None
-
 
 
 #loops for 20 runs and puts together the refImage
@@ -65,7 +43,7 @@ def loopAndGrabImage():
     global bbox
     firstImage = None
     accumulatorImage = None
-    for i in range(20):
+    for i in range(1):
         try:
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -190,12 +168,33 @@ def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
 
 timedDelays = 0
 
-def replayStep(step: Step, previousStep:Step):
+
+def moveAndClick(step, currentMov, postMoveDelay, midClickDelay):
+    global timedDelays
+    global newStepList
+    moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
+    if moved:
+        time.sleep(postMoveDelay)
+        timedDelays += postMoveDelay
+        img = loopAndGrabImage()
+        imageName = step.imageName.replace(".png", "_move.png")
+        img.save(imageName, "png")
+        newStepList.append(Step(-1, OutputType.MOVE, imageName, img))
+
+    mouse.press(Button.left)
+    time.sleep(midClickDelay)
+    timedDelays += midClickDelay
+    mouse.release(Button.left)
+    pass
+
+
+def replayStep(step: Step):
     global currentStep
     global delay
     global replayLast
     global timedDelays
-    currentStep  = currentStep + 1
+    global newStepList
+    currentStep = currentStep + 1
     print("playing:" + str(currentStep))
     if step.readyImage is not None:
         count = 0
@@ -292,31 +291,11 @@ def replayStep(step: Step, previousStep:Step):
         keyboard.press(Key.right)
         keyboard.release(Key.right)
     if step.output == OutputType.CLICK:
-        if step.clickPos:
-            moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-            if moved:
-                time.sleep(0.07)
-                timedDelays += 0.07
-            if delay:
-                print("extra sleep")
-                time.sleep(0.1)
-                timedDelays += 0.1
-        mouse.press(Button.left)
-        time.sleep(0.02)
-        timedDelays += 0.02
-        if delay:
-            time.sleep(0.03)
-            timedDelays += 0.03
-        mouse.release(Button.left)
+
+        moveAndClick(step, currentMov, 0.17 if delay else 0.07, 0.05 if delay else 0.02)
     if step.output == OutputType.LONG_CLICK:
-        moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-        if moved:
-            time.sleep(0.07)
-            timedDelays += 0.07
-        mouse.press(Button.left)
-        time.sleep(0.1)
-        timedDelays += 0.1
-        mouse.release(Button.left)
+
+        moveAndClick(step, currentMov, 0.07, 0.1)
     if step.output == OutputType.RESET:
         resetMouse()
         time.sleep(0.02)
@@ -353,115 +332,23 @@ def replayStep(step: Step, previousStep:Step):
         print(timedDelays)
     return currentStep
 
-override = False
-listen = True
 startTime = None
-
+newStepList = []
 
 def pressAndRelease(key):
     keyboard.press(key)
     keyboard.release(key)
 
 def on_release(key):
-    #I'm somewhat embarassed by how many global variables I use here
-    global ctrlOn
     global currentStageName
     global currentStep
     global stepList
     global stage
     global clickImage
-    global append
     global delay
-    global override
+    global newStepList
     global startTime
-    global listen
-    if not listen:
-        return
-    if hasattr(key, "name"):
-        if key.name == 'ctrl_l':
-            ctrlOn = False
-        if key.name == 'tab':
-            resetMouse()
-            recordWalk(OutputType.RESET, None)
-        if key.name == 'space':
-            if not clickImage:
-               clickImage = loopAndGrabImage()
-            # save ref image and record click
-            mouse.press(Button.left)
-            time.sleep(0.08)
-            mouse.release(Button.left)
-            clickImageTemp = clickImage
-            clickImage = False
-            recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
-            if ctrlOn:
-                loopUntilChange()
-                clickImage = loopAndGrabImage()
-        if key.name == 'end':
-            if not clickImage:
-               clickImage = loopAndGrabImage()
-            # save ref image and record click
-            keyboard.press(Key.enter)
-            keyboard.release(Key.enter)
-            clickImageTemp = clickImage
-            clickImage = False
-            recordWalk(OutputType.ENTER, clickImageTemp)
-            if ctrlOn:
-                loopUntilChange()
-                clickImage = loopAndGrabImage()
     if hasattr(key, "char"):
-        amt = 50
-        if ctrlOn:
-            amt = 5
-        if key.char == 'f':
-            moveMouse(0, amt, True)
-        if key.char == 'g':
-            moveMouse(amt, 0, True)
-        if key.char == 'r':
-            moveMouse(0, -amt, True)
-        if key.char == 'd':
-            moveMouse(-amt, 0, True)
-        if key.char == 'i':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.up)
-            time.sleep(0.05)
-            keyboard.release(Key.up)
-            recordWalk(OutputType.UP, preImage)
-        if key.char == 'j':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.left)
-            time.sleep(0.05)
-            keyboard.release(Key.left)
-            recordWalk(OutputType.LEFT, preImage)
-        if key.char == 'k':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.down)
-            time.sleep(0.05)
-            keyboard.release(Key.down)
-            recordWalk(OutputType.DOWN, preImage)
-        if key.char == 'l':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.right)
-            time.sleep(0.05)
-            keyboard.release(Key.right)
-            recordWalk(OutputType.RIGHT, preImage)
-        if key.char == ';':
-            for idx, x in enumerate(stepList):
-                replayStep(x, stepList[idx-1] if idx > 0 else None)
-            print("done: " + currentStageName)
-            delay = False
-            if stage.nextStageName is None:
-                print("ready to read")
-                if not append:
-                    stage = None
-                    stepList = []
-                    currentStep = 0
-                    currentStageName = ""
-            else:
-                stage = parseSteps(stage.nextStageName)
-                currentStep = 1
-                currentStageName = stage.name
-                print("ready: " + stage.name)
-                stepList = stage.steps
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
             if len(currentStageName) == 0:
@@ -477,67 +364,15 @@ def on_release(key):
                 delay = False
                 currentStageName = stage.name
                 stepList = stage.steps
-                for idx, x in enumerate(stepList):
-                    replayStep(x, stepList[idx-1] if idx > 0 else None)
+                newStepList = []
+                for x in stepList:
+                    replayStep(x)
+                    newStepList.append(x)
                 print("done: " + currentStageName)
-        if key.char == '\'':
-            replayStep(stepList[currentStep], None)
-            print("done: " + str(currentStep))
-        if key.char == 'z':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.f7)
-            keyboard.release(Key.f7)
-            keyboard.press(Key.f8)
-            keyboard.release(Key.f8)
-            recordWalk(OutputType.ANIM_OFF, preImage)
-        if key.char == '[':
-            # start playback
-            if currentStageName != '' and not override:
-                override = True
-                print("warning, already loaded, did you mean to press record instead? Pressing again will override")
-            else:
-                currentStageName = input('which stage?')
-                stage = parseSteps(currentStageName)
-                stepList = stage.steps
-        if key.char == ']':
-
-            append = not append
-            if append:
-                print("Mode: append")
-            else:
-                print("Mode: new")
-        if key.char == 'p':
-            # stop recording
-            currentStageName = input('stage name:')
-            f = open(currentStageName + ".dat", "w")
-            for step in stepList:
-                if step.imageName is not None:
-                    step.imageName = step.imageName.replace("\\\\", "\\" + currentStageName + "\\")
-            stage = formatStage(Stage(currentStageName, stepList))
-            print(stage)
-            f.write(stage)
-            moveImages(currentStageName)
+                f = open(currentStageName + "_new.dat", "w")
+                stage = formatStage(Stage(currentStageName, stepList))
+                f.write(stage)
 
 
-#moves the images currently saved in root down into a stage's dir
-def moveImages(currentStageName):
-    try:
-        os.mkdir(".\\" + currentStageName)
-    except:
-        1
-    for name in os.listdir("."):
-        if name.endswith(".png"):
-            shutil.move(name, currentStageName + "\\" + name)
-
-#since we can't detect if control is pressed, we need to record it ourselves
-def on_press(key):
-    try:
-        if key.name == 'ctrl_l':
-            global ctrlOn
-            ctrlOn = True
-    except:
-        1
-
-
-with Listener(on_press=on_press, on_release=on_release) as listener:
+with Listener(on_release=on_release) as listener:
     listener.join()

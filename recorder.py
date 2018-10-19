@@ -7,6 +7,11 @@ import sys
 import threading
 import time
 import win32gui
+import os
+import psutil
+# next I need to change out weapon's bay from clicking to numbers
+# and I need to see if there is a better way to control the interaction menu
+# and I need to finish running clickMoveSeperator
 
 import PIL
 from PIL import ImageChops, Image
@@ -38,8 +43,9 @@ windowXmiddle = (hwndChild[0] + hwndChild[2]) / 2
 windowYMiddle = ((hwndChild[1] + hwndChild[3]) / 2) + 12
 append = False
 
-#loop until the screen changes, then return the found image.
-#if it takes too long, just return
+
+# loop until the screen changes, then return the found image.
+# if it takes too long, just return
 def loopUntilChange():
     global bbox
     sct = mss()
@@ -59,8 +65,7 @@ def loopUntilChange():
             return None
 
 
-
-#loops for 20 runs and puts together the refImage
+# loops for 20 runs and puts together the refImage
 def loopAndGrabImage():
     global bbox
     firstImage = None
@@ -72,13 +77,13 @@ def loopAndGrabImage():
             if not firstImage:
                 firstImage = im
             else:
-                #take the new image, find the difference between it and the first image, convert it to greyscale, then make any colored pixel white
-                #the goal is to end up with a black image with only the differences in white
+                # take the new image, find the difference between it and the first image, convert it to greyscale, then make any colored pixel white
+                # the goal is to end up with a black image with only the differences in white
                 dif = PIL.ImageChops.difference(im, firstImage).convert("L").point((lambda x: 0 if x == 0 else 255))
                 if not accumulatorImage:
                     accumulatorImage = dif
                 else:
-                    #add the different difs together, so we end up with the union of all the differences
+                    # add the different difs together, so we end up with the union of all the differences
                     accumulatorImage = PIL.ImageChops.add(dif, accumulatorImage)
         except:
             print(sys.exc_info())
@@ -86,20 +91,22 @@ def loopAndGrabImage():
     screen = accumulatorImage.convert("RGB")
     return PIL.ImageChops.add(firstImage, screen)
 
+
 def resetMouse():
     mouse.position = (-1300, -1300)
     print('Mouse reset')
-    #reset the text area, so we don't get differences between loads  and run throughs
+    # reset the text area, so we don't get differences between loads  and run throughs
     keyboard.press(KeyCode.from_char('N'))
     keyboard.release(KeyCode.from_char('N'))
     global currentMov
     currentMov = [0, 0]
 
+
 clickImage = False
 
 
-def moveMouse(x, y, recordImage:bool = False):
-    #we want to record the ref image before we move the mouse the first time
+def moveMouse(x, y, recordImage: bool = False):
+    # we want to record the ref image before we move the mouse the first time
     if recordImage:
         global clickImage
         if not clickImage:
@@ -113,18 +120,18 @@ def moveMouse(x, y, recordImage:bool = False):
     currentMov[1] = currentMov[1] + y
     currentMov[1] = 0 if currentMov[1] < 0 else currentMov[1]
     print("moving mouse by:" + str(x) + "," + str(y) + " to " + str(currentMov[0]) + ", " + str(currentMov[1]))
-    #x and y positive
+    # x and y positive
     xPos = 1 if x > 0 else -1
     yPos = 1 if y > 0 else -1
     x = math.fabs(x)
     y = math.fabs(y)
-    #if we're not moving, just exit
+    # if we're not moving, just exit
     if x == 0 and y == 0:
         return False
     while x > 0 or y > 0:
         tempX = 0
         tempY = 0
-        #we can only reliably move 230px in one go
+        # we can only reliably move 230px in one go
         if x > 0:
             if x > 230:
                 tempX = 230
@@ -137,7 +144,7 @@ def moveMouse(x, y, recordImage:bool = False):
                 tempY = y
         y = y - 230
         x = x - 230
-        #windows always thinks the mouse is located at the middle of the window, even if we move it will end up back in the middle
+        # windows always thinks the mouse is located at the middle of the window, even if we move it will end up back in the middle
         mouse.position = (windowXmiddle + (xPos * tempX), windowYMiddle + (yPos * tempY))
         if x > 0 or y > 0:
             time.sleep(0.03)
@@ -149,14 +156,15 @@ def setStep(step):
     stepList.append(step)
 
 
-def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
+def recordWalk(outputType: OutputType, refImage: Image, current: [] = None):
     global currentStep
     currentStep = currentStep + 1
     try:
         os.makedirs(".\\" + currentStageName)
     except:
         1
-    refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + "_" + '%05x' % random.randrange(16**5) +  ".png"
+    refImageName = ".\\" + currentStageName + "\\" + str(currentStep) + "_" + '%05x' % random.randrange(
+        16 ** 5) + ".png"
     if (refImage):
         refImage.save(refImageName)
         setStep(Step(currentStep, outputType, refImageName, refImage, current))
@@ -166,47 +174,47 @@ def recordWalk(outputType: OutputType, refImage:Image, current: [] = None):
 
 sct = mss()
 
-def targetJiffy(im:Image):
+
+def targetJiffy(im: Image):
     whitePix = targetJiffyInner(im, (255, 255, 255))
     if whitePix:
         return whitePix
-    bluePix = targetJiffyInner(im, (159,198,255))
+    bluePix = targetJiffyInner(im, (159, 198, 255))
     if bluePix:
         return bluePix
     return None
 
 
-def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
-    #crop down to just the inner field
+def targetJiffyInner(im: Image, targetPixel: (int, int, int)):
+    # crop down to just the inner field
     im = im.crop((50, 120, 600, 275))
     found_pixels = [i for i, pixel in enumerate(im.getdata()) if pixel == targetPixel]
     found_pixels_coords = [divmod(index, im.size[0]) for index in found_pixels]
     if len(found_pixels_coords) > 0:
-        #50 and 120 are offsets caused by the cropping, 1.85 is a scaling factor caused by dosbox's mouse support
+        # 50 and 120 are offsets caused by the cropping, 1.85 is a scaling factor caused by dosbox's mouse support
         return [found_pixels_coords[0][1] + 50, int((found_pixels_coords[0][0] + 120) * 1.85)]
     return None
 
 
-
 timedDelays = 0
 
-def replayStep(step: Step, previousStep:Step):
+
+def replayStep(step: Step):
     global currentStep
     global delay
     global replayLast
     global timedDelays
-    currentStep  = currentStep + 1
-    print("playing:" + str(currentStep))
+    currentStep = currentStep + 1
     if step.readyImage is not None:
         count = 0
-        #if difference between current image and reference image is all black
+        # if difference between current image and reference image is all black
         if step.hasAlpha:
-            #create out ignore mask, this is an image where any transparent part of the readyImage will be transparent on the check image
+            # create out ignore mask, this is an image where any transparent part of the readyImage will be transparent on the check image
             ignoreMask = step.readyImage
         else:
-            #create our ignore mask, this is an image where any white part of the readyImage will be white on the check image
+            # create our ignore mask, this is an image where any white part of the readyImage will be white on the check image
             ignoreMask = step.readyImage.point(lambda x: 255 if x == 255 else 0)
-            transparencyMask = ignoreMask.convert("1", dither = 0)
+            transparencyMask = ignoreMask.convert("1", dither=0)
             ignoreMask.putalpha(transparencyMask)
         count = 1
         while True:
@@ -214,7 +222,6 @@ def replayStep(step: Step, previousStep:Step):
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             im = im.convert("RGBA")
             if step.hasAlpha:
-                print(step.imageName + " has alpha")
                 im2 = Image.alpha_composite(im, ignoreMask)
                 dif = ImageChops.difference(im2, im)
             else:
@@ -256,16 +263,16 @@ def replayStep(step: Step, previousStep:Step):
         keyboard.press(Key.up)
         keyboard.release(Key.up)
     if step.output == OutputType.WAIT:
-            time.sleep(0.05)
-            timedDelays += 0.05
+        time.sleep(0.05)
+        timedDelays += 0.05
     if step.output == OutputType.WAIT_GAME:
-            time.sleep(0.05)
-            timedDelays += 0.05
-            keyboard.press("w")
-            keyboard.release("w")
+        time.sleep(0.05)
+        timedDelays += 0.05
+        keyboard.press("w")
+        keyboard.release("w")
     if step.output == OutputType.ESCAPE:
-            keyboard.press(Key.esc)
-            keyboard.release(Key.esc)
+        keyboard.press(Key.esc)
+        keyboard.release(Key.esc)
     if step.output == OutputType.LEFT:
         keyboard.press(Key.left)
         keyboard.release(Key.left)
@@ -353,6 +360,7 @@ def replayStep(step: Step, previousStep:Step):
         print(timedDelays)
     return currentStep
 
+
 override = False
 listen = True
 startTime = None
@@ -362,8 +370,9 @@ def pressAndRelease(key):
     keyboard.press(key)
     keyboard.release(key)
 
+
 def on_release(key):
-    #I'm somewhat embarassed by how many global variables I use here
+    # I'm somewhat embarassed by how many global variables I use here
     global ctrlOn
     global currentStageName
     global currentStep
@@ -385,7 +394,7 @@ def on_release(key):
             recordWalk(OutputType.RESET, None)
         if key.name == 'space':
             if not clickImage:
-               clickImage = loopAndGrabImage()
+                clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
             time.sleep(0.08)
@@ -398,7 +407,7 @@ def on_release(key):
                 clickImage = loopAndGrabImage()
         if key.name == 'end':
             if not clickImage:
-               clickImage = loopAndGrabImage()
+                clickImage = loopAndGrabImage()
             # save ref image and record click
             keyboard.press(Key.enter)
             keyboard.release(Key.enter)
@@ -446,7 +455,7 @@ def on_release(key):
             recordWalk(OutputType.RIGHT, preImage)
         if key.char == ';':
             for idx, x in enumerate(stepList):
-                replayStep(x, stepList[idx-1] if idx > 0 else None)
+                replayStep(x)
             print("done: " + currentStageName)
             delay = False
             if stage.nextStageName is None:
@@ -465,23 +474,32 @@ def on_release(key):
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
             if len(currentStageName) == 0:
-                stages = [parseSteps("d2")]
+                stages = {"d2": parseSteps("d2")}
             else:
-                stages = [parseSteps(currentStageName)]
+                stages = {currentStageName: parseSteps(currentStageName)}
+            for x in stages:
+                stage = stages[x]
             while True:
-                stages.append(parseSteps(stages[len(stages)-1].nextStageName))
-                if stages[len(stages)-1].nextStageName is None:
-                    break
-            for stage in stages:
+                if stage.nextStageName:
+                    # I know this creates a race condition, I just don't care
+                    threading.Thread(target=loadNext, args=(stages, stage.nextStageName)).start()
                 currentStep = 0
                 delay = False
                 currentStageName = stage.name
                 stepList = stage.steps
                 for idx, x in enumerate(stepList):
-                    replayStep(x, stepList[idx-1] if idx > 0 else None)
+                    replayStep(x)
                 print("done: " + currentStageName)
+                process = psutil.Process(os.getpid())
+                print(process.memory_info().rss)
+                if stages[currentStageName].nextStageName is None:
+                    break
+                stage = stages[stages[currentStageName].nextStageName]
+                # currentStageName is actually the previous stage's name here
+                stages.pop(currentStageName)
+
         if key.char == '\'':
-            replayStep(stepList[currentStep], None)
+            replayStep(stepList[currentStep])
             print("done: " + str(currentStep))
         if key.char == 'z':
             preImage = loopAndGrabImage()
@@ -500,7 +518,6 @@ def on_release(key):
                 stage = parseSteps(currentStageName)
                 stepList = stage.steps
         if key.char == ']':
-
             append = not append
             if append:
                 print("Mode: append")
@@ -519,7 +536,11 @@ def on_release(key):
             moveImages(currentStageName)
 
 
-#moves the images currently saved in root down into a stage's dir
+def loadNext(stages, nextStageName):
+    stages[nextStageName] = parseSteps(nextStageName)
+
+
+# moves the images currently saved in root down into a stage's dir
 def moveImages(currentStageName):
     try:
         os.mkdir(".\\" + currentStageName)
@@ -529,7 +550,8 @@ def moveImages(currentStageName):
         if name.endswith(".png"):
             shutil.move(name, currentStageName + "\\" + name)
 
-#since we can't detect if control is pressed, we need to record it ourselves
+
+# since we can't detect if control is pressed, we need to record it ourselves
 def on_press(key):
     try:
         if key.name == 'ctrl_l':

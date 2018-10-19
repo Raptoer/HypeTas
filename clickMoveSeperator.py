@@ -43,26 +43,9 @@ def loopAndGrabImage():
     global bbox
     firstImage = None
     accumulatorImage = None
-    for i in range(1):
-        try:
-            sct_img = sct.grab(bbox)
-            im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-            if not firstImage:
-                firstImage = im
-            else:
-                #take the new image, find the difference between it and the first image, convert it to greyscale, then make any colored pixel white
-                #the goal is to end up with a black image with only the differences in white
-                dif = PIL.ImageChops.difference(im, firstImage).convert("L").point((lambda x: 0 if x == 0 else 255))
-                if not accumulatorImage:
-                    accumulatorImage = dif
-                else:
-                    #add the different difs together, so we end up with the union of all the differences
-                    accumulatorImage = PIL.ImageChops.add(dif, accumulatorImage)
-        except:
-            print(sys.exc_info())
-
-    screen = accumulatorImage.convert("RGB")
-    return PIL.ImageChops.add(firstImage, screen)
+    sct_img = sct.grab(bbox)
+    im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+    return im
 
 def resetMouse():
     mouse.position = (-1300, -1300)
@@ -179,7 +162,7 @@ def moveAndClick(step, currentMov, postMoveDelay, midClickDelay):
         img = loopAndGrabImage()
         imageName = step.imageName.replace(".png", "_move.png")
         img.save(imageName, "png")
-        newStepList.append(Step(-1, OutputType.MOVE, imageName, img))
+        newStepList.append(Step(-1, OutputType.MOVE, imageName, img, step.clickPos))
 
     mouse.press(Button.left)
     time.sleep(midClickDelay)
@@ -228,11 +211,13 @@ def replayStep(step: Step):
                 if step.imageName.endswith("2_cc112.png"):
                     dif.show()
                     dif.save("dif.png")
+                    step.readyImage.show()
                     os._exit(0)
             if count % 2000 == 0:
                 print("Waiting on:" + step.imageName)
                 dif.show()
                 dif.save("dif.png")
+                step.readyImage.show()
                 os._exit(0)
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
@@ -350,28 +335,49 @@ def on_release(key):
     global startTime
     if hasattr(key, "char"):
         if key.char == '/':
+
             startTime = datetime.datetime.utcnow()
             if len(currentStageName) == 0:
-                stages = [parseSteps("d2")]
+                stages = {"d2": parseSteps("d2")}
             else:
-                stages = [parseSteps(currentStageName)]
+                stages = {currentStageName: parseSteps(currentStageName)}
+            for x in stages:
+                stage = stages[x]
             while True:
-                stages.append(parseSteps(stages[len(stages)-1].nextStageName))
-                if stages[len(stages)-1].nextStageName is None:
-                    break
-            for stage in stages:
+                if stage.nextStageName:
+                    # I know this creates a race condition, I just don't care
+                    threading.Thread(target=loadNext, args=(stages, stage.nextStageName)).start()
                 currentStep = 0
                 delay = False
                 currentStageName = stage.name
                 stepList = stage.steps
-                newStepList = []
-                for x in stepList:
+                for idx, x in enumerate(stepList):
                     replayStep(x)
                     newStepList.append(x)
                 print("done: " + currentStageName)
+                for i, step in enumerate(newStepList):
+                    if step.output == OutputType.MOVE:
+                        print(newStepList[i+1].output)
+                        if newStepList[i+1].output == OutputType.CLICK or newStepList[i+1].output == OutputType.LONG_CLICK:
+                            print(i)
+                            stepImage = step.imageName
+                            nextStep = newStepList[i+1]
+                            nextStepImage = nextStep.imageName
+                            step.imageName = nextStepImage
+                            nextStep.imageName = stepImage
                 f = open(currentStageName + "_new.dat", "w")
-                stage = formatStage(Stage(currentStageName, stepList))
+                stage = formatStage(Stage(currentStageName, newStepList))
                 f.write(stage)
+
+                if stages[currentStageName].nextStageName is None:
+                    break
+                stage = stages[stages[currentStageName].nextStageName]
+                # currentStageName is actually the previous stage's name here
+                stages.pop(currentStageName)
+
+
+def loadNext(stages, nextStageName):
+    stages[nextStageName] = parseSteps(nextStageName)
 
 
 with Listener(on_release=on_release) as listener:

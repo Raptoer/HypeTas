@@ -1,6 +1,5 @@
 import datetime
 import math
-import os
 import random
 import shutil
 import sys
@@ -12,6 +11,11 @@ import psutil
 # next I need to change out weapon's bay from clicking to numbers
 # and I need to see if there is a better way to control the interaction menu
 # and I need to finish running clickMoveSeperator
+#use home, end, pg up and pg down to expand movement options
+#leave shuttle bay door open
+
+
+#page up on planet
 
 import PIL
 from PIL import ImageChops, Image
@@ -65,12 +69,12 @@ def loopUntilChange():
             return None
 
 
-# loops for 20 runs and puts together the refImage
+# loops for 5 runs and puts together the refImage
 def loopAndGrabImage():
     global bbox
     firstImage = None
     accumulatorImage = None
-    for i in range(20):
+    for i in range(5):
         try:
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -279,6 +283,18 @@ def replayStep(step: Step):
     if step.output == OutputType.DOWN:
         keyboard.press(Key.down)
         keyboard.release(Key.down)
+    if step.output == OutputType.PG_UP:
+        keyboard.press(Key.page_up)
+        keyboard.release(Key.page_up)
+    if step.output == OutputType.PG_DOWN:
+        keyboard.press(Key.page_down)
+        keyboard.release(Key.page_down)
+    if step.output == OutputType.HOME:
+        keyboard.press(Key.home)
+        keyboard.release(Key.home)
+    if step.output == OutputType.END:
+        keyboard.press(Key.END)
+        keyboard.release(Key.END)
     if step.output == OutputType.ENTER:
         keyboard.press(Key.enter)
         keyboard.release(Key.enter)
@@ -371,6 +387,30 @@ def pressAndRelease(key):
     keyboard.release(key)
 
 
+def loopAndPress(outputType:OutputType):
+    if outputType == OutputType.UP:
+        key = Key.up
+    if outputType == OutputType.LEFT:
+        key = Key.left
+    if outputType == OutputType.RIGHT:
+        key = Key.right
+    if outputType == OutputType.DOWN:
+        key = Key.down
+    if outputType == OutputType.END:
+        key = Key.end
+    if outputType == OutputType.PG_DOWN:
+        key = Key.page_down
+    if outputType == OutputType.PG_UP:
+        key = Key.page_up
+    if outputType == OutputType.HOME:
+        key = Key.home
+    preImage = loopAndGrabImage()
+    keyboard.press(key)
+    keyboard.release(key)
+    recordWalk(outputType, preImage)
+
+
+
 def on_release(key):
     # I'm somewhat embarassed by how many global variables I use here
     global ctrlOn
@@ -405,7 +445,7 @@ def on_release(key):
             if ctrlOn:
                 loopUntilChange()
                 clickImage = loopAndGrabImage()
-        if key.name == 'end':
+        if key.name == 'insert':
             if not clickImage:
                 clickImage = loopAndGrabImage()
             # save ref image and record click
@@ -430,29 +470,25 @@ def on_release(key):
         if key.char == 'd':
             moveMouse(-amt, 0, True)
         if key.char == 'i':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.up)
-            time.sleep(0.05)
-            keyboard.release(Key.up)
-            recordWalk(OutputType.UP, preImage)
+            if ctrlOn:
+                loopAndPress(OutputType.PG_UP)
+            else:
+                loopAndPress(OutputType.UP)
         if key.char == 'j':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.left)
-            time.sleep(0.05)
-            keyboard.release(Key.left)
-            recordWalk(OutputType.LEFT, preImage)
+            if ctrlOn:
+                loopAndPress(OutputType.HOME)
+            else:
+                loopAndPress(OutputType.LEFT)
         if key.char == 'k':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.down)
-            time.sleep(0.05)
-            keyboard.release(Key.down)
-            recordWalk(OutputType.DOWN, preImage)
+            if ctrlOn:
+                loopAndPress(OutputType.PG_DOWN)
+            else:
+                loopAndPress(OutputType.DOWN)
         if key.char == 'l':
-            preImage = loopAndGrabImage()
-            keyboard.press(Key.right)
-            time.sleep(0.05)
-            keyboard.release(Key.right)
-            recordWalk(OutputType.RIGHT, preImage)
+            if ctrlOn:
+                loopAndPress(OutputType.END)
+            else:
+                loopAndPress(OutputType.RIGHT)
         if key.char == ';':
             for idx, x in enumerate(stepList):
                 replayStep(x)

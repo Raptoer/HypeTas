@@ -22,6 +22,10 @@ class OutputType(Enum):
     TARGET_JIFFY="TARGET_JIFFY"
     MOVE="MOVE"
     TIME="TIME"
+    HOME="HOME"
+    END="END"
+    PG_UP="PG_UP"
+    PG_DOWN="PG_DOWN"
 
 
 class Step:

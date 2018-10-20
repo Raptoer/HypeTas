@@ -156,7 +156,7 @@ def moveAndClick(step, currentMov, postMoveDelay, midClickDelay):
     global timedDelays
     global newStepList
     moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-    if moved:
+    if moved and step.imageName is not None and step.imageName != "":
         time.sleep(postMoveDelay)
         timedDelays += postMoveDelay
         img = loopAndGrabImage()
@@ -277,6 +277,8 @@ def replayStep(step: Step):
         keyboard.release(Key.right)
     if step.output == OutputType.CLICK:
 
+        if delay:
+            print("delay")
         moveAndClick(step, currentMov, 0.17 if delay else 0.07, 0.05 if delay else 0.02)
     if step.output == OutputType.LONG_CLICK:
 

@@ -1,4 +1,5 @@
 import datetime
+import gc
 import math
 import os
 import random
@@ -6,8 +7,10 @@ import shutil
 import sys
 import threading
 import time
+import weakref
 import win32gui
 
+import os, win32api, win32con, win32process
 import PIL
 from PIL import ImageChops, Image
 from mss import mss
@@ -73,7 +76,6 @@ def moveMouse(x, y, recordImage:bool = False):
     currentMov[0] = 0 if currentMov[0] < 0 else currentMov[0]
     currentMov[1] = currentMov[1] + y
     currentMov[1] = 0 if currentMov[1] < 0 else currentMov[1]
-    print("moving mouse by:" + str(x) + "," + str(y) + " to " + str(currentMov[0]) + ", " + str(currentMov[1]))
     #x and y positive
     xPos = 1 if x > 0 else -1
     yPos = 1 if y > 0 else -1
@@ -152,13 +154,19 @@ def targetJiffyInner(im:Image, targetPixel:(int, int, int)):
 timedDelays = 0
 
 
-def moveAndClick(step, currentMov, postMoveDelay, midClickDelay):
+def moveAndClick(step, currentMov, postMoveDelay, midClickDelay, postMoveAlways):
     global timedDelays
     global newStepList
-    moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
-    if moved and step.imageName is not None and step.imageName != "":
+    moved = False
+    if step.clickPos:
+        moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
+    if postMoveAlways > 0.0:
+        time.sleep(postMoveAlways)
+
+    if moved:
         time.sleep(postMoveDelay)
         timedDelays += postMoveDelay
+    if moved and step.imageName is not None and step.imageName != "":
         img = loopAndGrabImage()
         imageName = step.imageName.replace(".png", "_move.png")
         img.save(imageName, "png")
@@ -178,7 +186,6 @@ def replayStep(step: Step):
     global timedDelays
     global newStepList
     currentStep = currentStep + 1
-    print("playing:" + str(currentStep))
     if step.readyImage is not None:
         count = 0
         #if difference between current image and reference image is all black
@@ -196,7 +203,6 @@ def replayStep(step: Step):
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             im = im.convert("RGBA")
             if step.hasAlpha:
-                print(step.imageName + " has alpha")
                 im2 = Image.alpha_composite(im, ignoreMask)
                 dif = ImageChops.difference(im2, im)
             else:
@@ -207,14 +213,14 @@ def replayStep(step: Step):
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
             if count % 50 == 0:
-                print("Waiting on:" + step.imageName)
+                print("Waiting on:" + step.imageName + " it will be a " + str(step.output))
                 if step.imageName.endswith("2_cc112.png"):
                     dif.show()
                     dif.save("dif.png")
                     step.readyImage.show()
                     os._exit(0)
             if count % 2000 == 0:
-                print("Waiting on:" + step.imageName)
+                print("Waiting on:" + step.imageName + " it will be a " + str(step.output))
                 dif.show()
                 dif.save("dif.png")
                 step.readyImage.show()
@@ -259,6 +265,18 @@ def replayStep(step: Step):
     if step.output == OutputType.ENTER:
         keyboard.press(Key.enter)
         keyboard.release(Key.enter)
+    if step.output == OutputType.PG_UP:
+        keyboard.press(Key.page_up)
+        keyboard.release(Key.page_up)
+    if step.output == OutputType.PG_DOWN:
+        keyboard.press(Key.page_down)
+        keyboard.release(Key.page_down)
+    if step.output == OutputType.HOME:
+        keyboard.press(Key.home)
+        keyboard.release(Key.home)
+    if step.output == OutputType.END:
+        keyboard.press(Key.END)
+        keyboard.release(Key.END)
     if step.output == OutputType.MOVE:
         moved = moveMouse(step.clickPos[0] - currentMov[0], (step.clickPos[1] - currentMov[1]))
     if step.output == OutputType.ANIM_OFF:
@@ -279,10 +297,10 @@ def replayStep(step: Step):
 
         if delay:
             print("delay")
-        moveAndClick(step, currentMov, 0.17 if delay else 0.07, 0.05 if delay else 0.02)
+        moveAndClick(step, currentMov, 0.07, 0.05 if delay else 0.02, 0.1 if delay else 0)
     if step.output == OutputType.LONG_CLICK:
 
-        moveAndClick(step, currentMov, 0.07, 0.1)
+        moveAndClick(step, currentMov, 0.07, 0.1, 0)
     if step.output == OutputType.RESET:
         resetMouse()
         time.sleep(0.02)
@@ -340,7 +358,7 @@ def on_release(key):
 
             startTime = datetime.datetime.utcnow()
             if len(currentStageName) == 0:
-                stages = {"d2": parseSteps("d2")}
+                stages = {"planet": parseSteps("planet")}
             else:
                 stages = {currentStageName: parseSteps(currentStageName)}
             for x in stages:
@@ -353,15 +371,14 @@ def on_release(key):
                 delay = False
                 currentStageName = stage.name
                 stepList = stage.steps
+                newStepList = []
                 for idx, x in enumerate(stepList):
                     replayStep(x)
                     newStepList.append(x)
                 print("done: " + currentStageName)
                 for i, step in enumerate(newStepList):
                     if step.output == OutputType.MOVE:
-                        print(newStepList[i+1].output)
                         if newStepList[i+1].output == OutputType.CLICK or newStepList[i+1].output == OutputType.LONG_CLICK:
-                            print(i)
                             stepImage = step.imageName
                             nextStep = newStepList[i+1]
                             nextStepImage = nextStep.imageName
@@ -371,11 +388,15 @@ def on_release(key):
                 stage = formatStage(Stage(currentStageName, newStepList))
                 f.write(stage)
 
-                if stages[currentStageName].nextStageName is None:
+                han = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_VM_READ, 0,
+                                           os.getpid())
+                process_memory = int(win32process.GetProcessMemoryInfo(han)['WorkingSetSize'])
+                print("memory:" + str(process_memory))
+                nextStageName = stages[currentStageName].nextStageName
+                stage = stages[nextStageName]
+                if nextStageName is None:
                     break
-                stage = stages[stages[currentStageName].nextStageName]
-                # currentStageName is actually the previous stage's name here
-                stages.pop(currentStageName)
+
 
 
 def loadNext(stages, nextStageName):

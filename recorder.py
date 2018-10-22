@@ -13,7 +13,9 @@ import psutil
 # and I need to finish running clickMoveSeperator
 #use home, end, pg up and pg down to expand movement options
 #leave shuttle bay door open
-
+#use up and down with the jiffies
+#wb has unnessary move at 60_56de7
+#bomb, hold down click
 
 #page up on planet
 
@@ -236,6 +238,12 @@ def replayStep(step: Step):
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
             if count % 50 == 0:
+                if step.imageName.startswith(".\\elf"):
+                    newRefImage = loopAndGrabImage()
+                    refImageName = ".\\elf\\" + str(currentStep) + "_" + '%05x' % random.randrange(
+                        16 ** 5) + ".png"
+                    print("creating:" + refImageName)
+                    newRefImage.save(refImageName)
                 print("Waiting on:" + step.imageName)
                 if step.imageName.endswith("2_cc112.png"):
                     dif.show()
@@ -263,9 +271,6 @@ def replayStep(step: Step):
             timedDelays += 0.09
         else:
             print("TARGET FAILED TO COORD")
-    if step.output == OutputType.UP:
-        keyboard.press(Key.up)
-        keyboard.release(Key.up)
     if step.output == OutputType.WAIT:
         time.sleep(0.05)
         timedDelays += 0.05
@@ -274,6 +279,9 @@ def replayStep(step: Step):
         timedDelays += 0.05
         keyboard.press("w")
         keyboard.release("w")
+    if step.output == OutputType.UP:
+        keyboard.press(Key.up)
+        keyboard.release(Key.up)
     if step.output == OutputType.ESCAPE:
         keyboard.press(Key.esc)
         keyboard.release(Key.esc)
@@ -510,7 +518,7 @@ def on_release(key):
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
             if len(currentStageName) == 0:
-                stages = {"d2": parseSteps("d2")}
+                stages = {"d2_new": parseSteps("d2_new")}
             else:
                 stages = {currentStageName: parseSteps(currentStageName)}
             for x in stages:

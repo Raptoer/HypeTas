@@ -1,0 +1,7 @@
+RESET
+DOWN;.\comms2\1_ec5c6.png;
+ENTER;.\comms2\2_f28ad.png;505,915
+WAIT
+RESET
+ENTER_UNTIL;.\comms2\7_811c1.png;0,0
+?comms3_new

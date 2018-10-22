@@ -78,7 +78,7 @@ CLICK;.\d2\72_1d2f1.png;450,470
 LEFT;.\d2\73_3fe7a.png;
 CLICK;.\d2\74_c5ff5.png;350,470
 CLICK;.\d2\75_476d3.png;350,470
-CLICK;.\d2\76_df1c8.png;350,470
+PG_UP;.\d2\76_df1c8.png;350,470
 UP;.\d2\77_dffde.png;
 RIGHT;.\d2\78_9c049.png;
 UP;.\d2\79_33420.png;

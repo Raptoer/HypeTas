@@ -56,10 +56,8 @@ ENTER;.\elf\58_8819a.png;0,650
 ENTER;.\elf\59_9652f.png;0,650
 ENTER;.\elf\60_35be2.png;0,650
 ENTER;.\elf\61_e26f9.png;0,650
-MOVE;.\elf\62_d9d51.png;500,150
-CLICK;.\elf\62_d9d51_move.png;500,150
-CLICK;.\elf\63_96d7a.png;500,150
-TARGET_JIFFY;.\elf\64_271a1.png;
+DOWN;.\elf\62_d9d51.png;
+TARGET_JIFFY;.\elf\60_67520.png;
 CLICK;.\elf\63_a84ea.png;
 RESET
 ENTER;.\elf\65_44152.png;0,0
@@ -70,9 +68,7 @@ ENTER;.\elf\69_ae9bb.png;0,0
 ENTER;.\elf\70_0af8e.png;0,0
 MOVE;.\elf\71_ac406.png;0,700
 CLICK;.\elf\71_ac406_move.png;0,700
-MOVE;.\elf\72_a6298.png;100,150
-CLICK;.\elf\72_a6298_move.png;100,150
-CLICK;.\elf\73_45ce5.png;100,150
+UP;.\elf\72_a6298.png;100,150
 MOVE;.\elf\74_e0569.png;300,200
 CLICK;.\elf\74_e0569_move.png;300,200
 CLICK;.\elf\75_caa30.png;300,200
@@ -82,9 +78,7 @@ CLICK;.\elf\77_6ef92.png;100,590
 CLICK;.\elf\78_6465d.png;100,590
 CLICK;.\elf\79_a5ba9.png;100,590
 CLICK;.\elf\80_a0290.png;100,590
-MOVE;.\elf\80_848bd.png;500,140
-CLICK;.\elf\80_848bd_move.png;500,140
-CLICK;.\elf\81_a63bb.png;500,140
+DOWN;.\elf\80_848bd.png;500,140
 MOVE;.\elf\82_9134a.png;320,205
 CLICK;.\elf\82_9134a_move.png;320,205
 CLICK;.\elf\83_df7b6.png;320,205
@@ -97,9 +91,7 @@ CLICK;.\elf\88_8a909.png;320,705
 CLICK;.\elf\89_c1e3a.png;320,705
 MOVE;.\elf\90_e410d.png;320,755
 CLICK;.\elf\90_e410d_move.png;320,755
-MOVE;.\elf\91_1c2e0.png;120,155
-CLICK;.\elf\91_1c2e0_move.png;120,155
-CLICK;.\elf\92_7b810.png;120,155
+UP;.\elf\91_1c2e0.png;120,155
 ENTER;.\elf\93_823de.png;120,155
-ENTER;.\elf\94_0d05d.png;120,155
+ENTER;.\elf\96_4f237.png;120,155
 ?elf2

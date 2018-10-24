@@ -384,7 +384,7 @@ def on_release(key):
                             nextStepImage = nextStep.imageName
                             step.imageName = nextStepImage
                             nextStep.imageName = stepImage
-                f = open(currentStageName + "_new.dat", "w")
+                f = open(currentStageName + ".dat", "w")
                 stage = formatStage(Stage(currentStageName, newStepList))
                 f.write(stage)
 

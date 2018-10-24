@@ -10,7 +10,6 @@ import os
 import psutil
 # next I need to change out weapon's bay from clicking to numbers
 # and I need to see if there is a better way to control the interaction menu
-# and I need to finish running clickMoveSeperator
 #use home, end, pg up and pg down to expand movement options
 #leave shuttle bay door open
 #use up and down with the jiffies
@@ -518,7 +517,7 @@ def on_release(key):
         if key.char == '/':
             startTime = datetime.datetime.utcnow()
             if len(currentStageName) == 0:
-                stages = {"d2_new": parseSteps("d2_new")}
+                stages = {"d2": parseSteps("d2")}
             else:
                 stages = {currentStageName: parseSteps(currentStageName)}
             for x in stages:

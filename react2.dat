@@ -45,8 +45,11 @@ CLICK;;460,385
 CLICK;;460,385
 CLICK;;460,335
 CLICK;;460,335
-CLICK;.\react2\38.png;55,475
-CLICK;.\react2\66_b5444.png;625,800
-CLICK;;625,800;
-CLICK;.\react2\2_ca096.png;625,900;
+MOVE;.\react2\38.png;55,475
+CLICK;.\react2\38_move.png;55,475
+MOVE;.\react2\66_b5444.png;625,800
+CLICK;.\react2\66_b5444_move.png;625,800
+CLICK;;625,800
+MOVE;.\react2\2_ca096.png;625,900
+CLICK;.\react2\2_ca096_move.png;625,900
 ?wb

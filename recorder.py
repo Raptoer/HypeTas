@@ -444,7 +444,7 @@ def on_release(key):
                 clickImage = loopAndGrabImage()
             # save ref image and record click
             mouse.press(Button.left)
-            time.sleep(0.08)
+            time.sleep(0.05)
             mouse.release(Button.left)
             clickImageTemp = clickImage
             clickImage = False
@@ -462,8 +462,14 @@ def on_release(key):
             clickImage = False
             recordWalk(OutputType.ENTER, clickImageTemp)
             if ctrlOn:
-                loopUntilChange()
-                clickImage = loopAndGrabImage()
+                clickImage = loopUntilChange()
+                mouse.press(Button.left)
+                time.sleep(0.05)
+                mouse.release(Button.left)
+                clickImageTemp = clickImage
+                clickImage = False
+                recordWalk(OutputType.CLICK, clickImageTemp, [currentMov[0], currentMov[1]])
+
     if hasattr(key, "char"):
         amt = 50
         if ctrlOn:

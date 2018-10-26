@@ -1,6 +1,6 @@
 ENTER;.\rs\elevatorSkip.png;
 UP;.\rs\1_84320.png;
-MOVE;.\rs\2_42008.png;325,565
+MOVE;;325,565
 CLICK;.\rs\2_42008_move.png;325,565
 ENTER;.\rs\3_dcabc.png;
 ENTER;.\rs\4_d8e0b.png;

@@ -4,8 +4,9 @@ UP
 ENTER;.\comms1\4_c092e_move.png;
 RESET
 MOVE;.\comms1\8_d4740.png;50,300
-LONG_CLICK;.\comms1\8_d4740_move.png;50,300
+CLICK;.\comms1\8_d4740_move.png;50,300
 ENTER;.\comms1\8_ca3fa.png;
+CLICK;.\comms1\9_56be5.png;50,300
 CLICK;.\comms1\9_56be5.png;50,300
 CLICK;.\comms1\10_597c0.png;50,300
 ENTER;.\comms1\11_36aba.png;

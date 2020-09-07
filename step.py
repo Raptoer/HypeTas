@@ -3,6 +3,8 @@ from enum import Enum
 
 class OutputType(Enum):
     UP = "UP"
+    BOMB = "BOMB"
+    WAIT_BOMB = "WAIT_BOMB"
     DOWN = "DOWN"
     LEFT = "LEFT"
     RIGHT = "RIGHT"
@@ -35,6 +37,7 @@ class Step:
         self.imageName = imageName
         self.readyImage = readyImage
         self.clickPos = clickPos
+        self.hasAlpha = False
         if readyImage is not None and len(self.readyImage.getbands()) > 3:
             self.hasAlpha = self.readyImage.histogram()[768] > 0
 
@@ -50,7 +53,7 @@ def parse(number, line: str):
     if len(split) == 1:
         return Step(number, OutputType[split[0]],None, None)
     if len(split) == 2 or len(split[2]) == 0:
-        return Step(number, OutputType[split[0]],split[1], Image.open(split[1]).convert("RGBA"))
+        return Step(number, OutputType[split[0]],split[1], None if len(split[1]) == 0 else Image.open(split[1]).convert("RGBA"))
     clickPos = [int(split[2].split(",")[0]), int(split[2].split(",")[1])]
     if len(split[1]) > 0:
         return Step(number, OutputType[split[0]],split[1], Image.open(split[1]).convert("RGBA"), clickPos=clickPos)

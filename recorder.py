@@ -8,13 +8,16 @@ import time
 import win32gui
 import os
 import psutil
+
+from ctypes import *
+
+
 # next I need to change out weapon's bay from clicking to numbers
 # and I need to see if there is a better way to control the interaction menu
 #use home, end, pg up and pg down to expand movement options
 #leave shuttle bay door open
 #use up and down with the jiffies
 #wb has unnessary move at 60_56de7
-#bomb, hold down click
 
 #page up on planet
 
@@ -25,7 +28,7 @@ from pynput.keyboard import Listener, Key, Controller as cont, KeyCode
 from pynput.mouse import Button, Controller
 
 import windowOps
-from step import parseSteps, formatStage, Step, OutputType, Stage
+from step import parseSteps, formatStage, Step, OutputType, Stage, formatStep
 
 keyboard = cont()
 
@@ -75,7 +78,7 @@ def loopAndGrabImage():
     global bbox
     firstImage = None
     accumulatorImage = None
-    for i in range(5):
+    for i in range(3):
         try:
             sct_img = sct.grab(bbox)
             im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -90,6 +93,7 @@ def loopAndGrabImage():
                 else:
                     # add the different difs together, so we end up with the union of all the differences
                     accumulatorImage = PIL.ImageChops.add(dif, accumulatorImage)
+            time.sleep(0.04)
         except:
             print(sys.exc_info())
 
@@ -207,11 +211,11 @@ timedDelays = 0
 def replayStep(step: Step):
     global currentStep
     global delay
+    global stepList
     global replayLast
     global timedDelays
     currentStep = currentStep + 1
     if step.readyImage is not None:
-        count = 0
         # if difference between current image and reference image is all black
         if step.hasAlpha:
             # create out ignore mask, this is an image where any transparent part of the readyImage will be transparent on the check image
@@ -237,24 +241,47 @@ def replayStep(step: Step):
                 keyboard.press(Key.enter)
                 keyboard.release(Key.enter)
             if count % 50 == 0:
-                if step.imageName.startswith(".\\elf"):
-                    newRefImage = loopAndGrabImage()
-                    refImageName = ".\\elf\\" + str(currentStep) + "_" + '%05x' % random.randrange(
-                        16 ** 5) + ".png"
-                    print("creating:" + refImageName)
-                    newRefImage.save(refImageName)
                 print("Waiting on:" + step.imageName)
-                if step.imageName.endswith("2_cc112.png"):
-                    dif.show()
-                    dif.save("dif.png")
-                    os._exit(0)
-            if count % 2000 == 0:
-                print("Waiting on:" + step.imageName)
+            # if count % 300 == 0:
+            #     print("----------------------------------")
+            #     print("checking 1 ahead" + formatStep(step))
+            #     print("----------------------------------")
+            #     step = stepList[currentStep]
+            #     if step.readyImage:
+            #         # if difference between current image and reference image is all black
+            #         if step.hasAlpha:
+            #             # create out ignore mask, this is an image where any transparent part of the readyImage will be transparent on the check image
+            #             ignoreMask = step.readyImage
+            #         else:
+            #             # create our ignore mask, this is an image where any white part of the readyImage will be white on the check image
+            #             ignoreMask = step.readyImage.point(lambda x: 255 if x == 255 else 0)
+            #             transparencyMask = ignoreMask.convert("1", dither=0)
+            #             ignoreMask.putalpha(transparencyMask)
+            #     else:
+            #         break
+            # if count % 700 == 0:
+            #     print("Replacing: " + step.imageName)
+            #     step.readyImage.save(step.imageName.replace(".png", "_bak.png"))
+            #     image = loopAndGrabImage()
+            #     image.save(step.imageName)
+            #     if image is not None and len(image.getbands()) > 3:
+            #        step.hasAlpha = image.histogram()[768] > 0
+            #     step.readyImage = image
+            #     if step.imageName.endswith("2_cc112.png"):
+            #         dif.show()
+            #         dif.save("dif.png")
+            #         os._exit(0)
+            if count % 500 == 0:
                 dif.show()
                 dif.save("dif.png")
                 os._exit(0)
             if dif.getbbox() is None or dif.getbbox()[3] < 20:
                 break
+
+            if step.output == OutputType.WAIT_BOMB:
+                keyboard.press("w")
+                keyboard.release("w")
+                time.sleep(0.01)
     if step.output == OutputType.TARGET_JIFFY:
         sct_img = sct.grab(bbox)
         im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -271,11 +298,11 @@ def replayStep(step: Step):
         else:
             print("TARGET FAILED TO COORD")
     if step.output == OutputType.WAIT:
-        time.sleep(0.05)
-        timedDelays += 0.05
+        time.sleep(0.04)
+        timedDelays += 0.04
     if step.output == OutputType.WAIT_GAME:
-        time.sleep(0.05)
-        timedDelays += 0.05
+        time.sleep(0.04)
+        timedDelays += 0.04
         keyboard.press("w")
         keyboard.release("w")
     if step.output == OutputType.UP:
@@ -300,8 +327,8 @@ def replayStep(step: Step):
         keyboard.press(Key.home)
         keyboard.release(Key.home)
     if step.output == OutputType.END:
-        keyboard.press(Key.END)
-        keyboard.release(Key.END)
+        keyboard.press(Key.end)
+        keyboard.release(Key.end)
     if step.output == OutputType.ENTER:
         keyboard.press(Key.enter)
         keyboard.release(Key.enter)
@@ -382,6 +409,26 @@ def replayStep(step: Step):
         print(datetime.datetime.utcnow() - startTime)
         print(timedDelays)
     return currentStep
+
+def bombClick():
+    print("click")
+    global timedDelays
+    mouse.press(Button.left)
+    time.sleep(0.180)
+    timedDelays += 0.180
+    mouse.release(Button.left)
+
+
+def findBombNumber(bombbox):
+    sct_img = sct.grab(bombbox)
+    im = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX").convert("L")
+    im = im.point(lambda x: 255 if x > 60 else 0 , "1")
+    for i in range (0, 10):
+        im2 = Image.open(".\\bomb\\"+str(i)+".png")
+        equal = ImageChops.difference(im, im2).getbbox() is None
+
+        if equal:
+            return i
 
 
 override = False
@@ -521,31 +568,33 @@ def on_release(key):
                 print("ready: " + stage.name)
                 stepList = stage.steps
         if key.char == '/':
-            startTime = datetime.datetime.utcnow()
-            if len(currentStageName) == 0:
-                stages = {"d2": parseSteps("d2")}
-            else:
-                stages = {currentStageName: parseSteps(currentStageName)}
-            for x in stages:
-                stage = stages[x]
-            while True:
-                if stage.nextStageName:
-                    # I know this creates a race condition, I just don't care
-                    threading.Thread(target=loadNext, args=(stages, stage.nextStageName)).start()
-                currentStep = 0
-                delay = False
-                currentStageName = stage.name
-                stepList = stage.steps
-                for idx, x in enumerate(stepList):
-                    replayStep(x)
-                print("done: " + currentStageName)
-                process = psutil.Process(os.getpid())
-                print(process.memory_info().rss)
-                if stages[currentStageName].nextStageName is None:
-                    break
-                stage = stages[stages[currentStageName].nextStageName]
-                # currentStageName is actually the previous stage's name here
-                stages.pop(currentStageName)
+            try:
+                startTime = datetime.datetime.utcnow()
+                ok = windll.user32.BlockInput(True)
+                if len(currentStageName) == 0:
+                    stages = {"d2": parseSteps("d2")}
+                else:
+                    stages = {currentStageName: parseSteps(currentStageName)}
+                for x in stages:
+                    stage = stages[x]
+                while True:
+                    if stage.nextStageName:
+                        # I know this creates a race condition, I just don't care
+                        threading.Thread(target=loadNext, args=(stages, stage.nextStageName)).start()
+                    currentStep = 0
+                    delay = False
+                    currentStageName = stage.name
+                    stepList = stage.steps
+                    for idx, x in enumerate(stepList):
+                        replayStep(x)
+                    print("done: " + currentStageName)
+                    if stages[currentStageName].nextStageName is None:
+                        break
+                    stage = stages[stages[currentStageName].nextStageName]
+                    # currentStageName is actually the previous stage's name here
+            finally:
+                ok = windll.user32.BlockInput(False)
+
 
         if key.char == '\'':
             replayStep(stepList[currentStep])

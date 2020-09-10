@@ -1,3 +1,4 @@
+RESET
 MOVE;;150,300
 LONG_CLICK;.\comms3\1_c374e_move.png;150,300
 MOVE;;50,80

@@ -19,6 +19,7 @@ def replayWhole(currentStageName):
         stages = {currentStageName: parseSteps(currentStageName)}
     for x in stages:
         dataHolder.stage = stages[x]
+    splitCSV = ""
     while True:
         if dataHolder.stage.nextStageName:
             # I know this creates a race condition, I just don't care
@@ -27,8 +28,10 @@ def replayWhole(currentStageName):
         dataHolder.delay = False
         currentStageName = dataHolder.stage.name
         dataHolder.stepList = dataHolder.stage.steps
+        stageStart = datetime.datetime.now()
         for idx, x in enumerate(dataHolder.stepList):
             replayStep(x)
+        splitCSV = splitCSV + ""
         print("done: " + currentStageName)
         if stages[currentStageName].nextStageName is None:
             break

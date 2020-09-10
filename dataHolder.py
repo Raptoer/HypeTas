@@ -33,3 +33,6 @@ timedDelays = 0
 listen = True
 startTime = None
 clickImage = False
+
+splits = []
+microsplits = []
